@@ -1,0 +1,23 @@
+.quick-page {
+  display: flex;
+  background-color: #dfbd8d;
+  width: 100vw;
+  height: 100vh;
+}
+
+.quick-page_container {
+  position: relative;
+  background-color: #ffe4c4;
+  width: 72vw;
+  height: 72vh;
+  margin: auto;
+}
+
+.handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+}

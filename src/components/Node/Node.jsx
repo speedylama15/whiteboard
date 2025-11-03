@@ -1,0 +1,30 @@
+import useApp from "../../store/useApp";
+
+import "./Node.css";
+
+const Node = ({ node }) => {
+  const selectedNodeID = useApp((state) => state.selectedNodeID);
+
+  return (
+    <div
+      data-node-id={node.id}
+      className="node basic-node"
+      data-is-selected={selectedNodeID === node.id}
+      style={{
+        width: node?.dimension.width,
+        height: node?.dimension.height,
+        transform: `translate(${node?.position.x}px, ${node?.position.y}px)`,
+      }}
+    >
+      <div
+        className="node_text"
+        contentEditable={true}
+        suppressContentEditableWarning={true}
+      >
+        {node.content.text}
+      </div>
+    </div>
+  );
+};
+
+export default Node;

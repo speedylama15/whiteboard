@@ -8,7 +8,7 @@
 }
 
 body {
-  background-color: #1079a4;
+  background-color: #add8e6;
 }
 
 p {
@@ -23,7 +23,7 @@ p {
 
 .whiteboard-wrapper {
   position: relative;
-  background-color: #2795c1;
+  background-color: #3aafde;
   width: 75vw;
   height: 75vh;
   margin: auto;
@@ -37,17 +37,26 @@ p {
   width: 200px;
   height: 200px;
   background-color: #0087ff;
-}
-
-.whiteboard-edges {
+  /* background-color: transparent; */
 }
 
 svg {
   position: absolute;
-  pointer-events: none;
   overflow: visible;
-  z-index: -1;
+}
+
+svg,
+g {
+  pointer-events: none;
+  z-index: 1;
 }
 
 path {
+  pointer-events: auto;
+  z-index: 10;
+}
+
+circle {
+  pointer-events: auto;
+  z-index: 10;
 }

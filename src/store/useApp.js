@@ -15,16 +15,39 @@ const useApp = create((set) => ({
   setPanOffsetPos: (panOffsetPos) =>
     set((state) => ({ ...state, panOffsetPos })),
 
-  // nodes
-  initNodes,
-  isDraggingNode: false,
+  // wrapperRect
+  wrapperRect: null,
+  setWrapperRect: (rect) =>
+    set((state) => ({
+      ...state,
+      wrapperRect: rect,
+    })),
+
+  // tree
+  tree: null,
+  setTree: (tree) => set((state) => ({ ...state, tree })),
+
+  // dragging single node
   selectedNodeID: null,
   selectedNode: null,
+  setSelectedNodePosition: (position) =>
+    set((state) => ({
+      ...state,
+      selectedNode: { ...state.selectedNode, position },
+    })),
+
+  // nodes
+  initNodes,
+  // idea: null, panning, draggingNode, draggingNodes, draggingEdge
+  draggingState: null,
+  setDraggingState: (draggingState) =>
+    set((state) => ({ ...state, draggingState })),
+  isDraggingNode: false,
+
   setIsDraggingNode: (bool) =>
     set((state) => ({ ...state, isDraggingNode: bool })),
   setSelectedNode: (node) => set((state) => ({ ...state, selectedNode: node })),
   setSelectedNodeID: (id) => set((state) => ({ ...state, selectedNodeID: id })),
-
   setSingleNodePosition: (nodeID, newPosition) =>
     set((state) => {
       return {

@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback } from "react";
+import RBush from "rbush";
 
 import Node from "./components/Node/Node";
 import Canvas from "./components/Canvas/Canvas";
@@ -9,48 +10,52 @@ import "./App.css";
 
 function App() {
   // Panning
-  const isPanning = useApp((state) => state.isPanning);
   const scale = useApp((state) => state.scale);
   const panStartPos = useApp((state) => state.panStartPos);
   const panOffsetPos = useApp((state) => state.panOffsetPos);
   const setScale = useApp((state) => state.setScale);
-  const setIsPanning = useApp((state) => state.setIsPanning);
   const setPanStartPos = useApp((state) => state.setPanStartPos);
   const setPanOffsetPos = useApp((state) => state.setPanOffsetPos);
 
   const initNodes = useApp((state) => state.initNodes);
+
+  const draggingState = useApp((state) => state.draggingState);
+  const setDraggingState = useApp((state) => state.setDraggingState);
+
   const selectedNodeID = useApp((state) => state.selectedNodeID);
   const selectedNode = useApp((state) => state.selectedNode);
   const setSelectedNodeID = useApp((state) => state.setSelectedNodeID);
   const setSelectedNode = useApp((state) => state.setSelectedNode);
+  const setTree = useApp((state) => state.setTree);
   const setSingleNodePosition = useApp((state) => state.setSingleNodePosition);
 
-  // dragging single node
-  const isDraggingNode = useApp((state) => state.isDraggingNode);
-  const setIsDraggingNode = useApp((state) => state.setIsDraggingNode);
+  // wrapperRect
+  const wrapperRect = useApp((state) => state.wrapperRect);
+  const setWrapperRect = useApp((state) => state.setWrapperRect);
 
   const whiteboardWrapperRef = useRef();
   const selectedNodeRef = useRef();
 
-  // todo: auto scroll
-  const [startCoords, setStartCoords] = useState({ x: 0, y: 0 });
+  // todo
+  const startCoordsRef = useRef({ x: 0, y: 0 });
 
-  // idea: init
+  // init
   const handleMouseDown = (e) => {
     const node = e.target.closest(".node");
 
+    // todo
     if (node) {
       const nodeID = node.dataset.nodeId;
+      // idea: maybe I need a map?
       const node_ = initNodes.find((node) => node.id === nodeID);
-      if (!node_) return;
 
-      selectedNodeRef.current = node;
+      startCoordsRef.current.x = e.clientX;
+      startCoordsRef.current.y = e.clientY;
+
       setSelectedNodeID(nodeID);
       setSelectedNode(node_);
-      setIsDraggingNode(true);
 
-      // todo
-      setStartCoords({ x: e.clientX, y: e.clientY });
+      setDraggingState("dragging-node");
 
       return;
     } else {
@@ -60,54 +65,55 @@ function App() {
     }
 
     // panning
-    setIsPanning(true);
+    setDraggingState("panning");
     setPanStartPos({
       x: e.clientX - panOffsetPos.x,
       y: e.clientY - panOffsetPos.y,
     });
   };
 
-  // idea: change
-  const handleMouseMove = (e) => {
-    const wrapper = whiteboardWrapperRef.current;
-    if (!wrapper) return;
+  // change
+  const handleMouseMove = useCallback(
+    (e) => {
+      const wrapper = whiteboardWrapperRef.current;
+      if (!wrapper) return;
 
-    if (isDraggingNode) {
-      const diffX = (e.clientX - startCoords.x) / scale;
-      const diffY = (e.clientY - startCoords.y) / scale;
+      if (draggingState === "dragging-node") {
+        const diffX = (e.clientX - startCoordsRef.current.x) / scale;
+        const diffY = (e.clientY - startCoordsRef.current.y) / scale;
+        const newX = selectedNode.position.x + diffX;
+        const newY = selectedNode.position.y + diffY;
 
-      const { x, y } = selectedNode.position;
+        // re-renders only the selected node
+        setSingleNodePosition(selectedNodeID, { x: newX, y: newY });
 
-      const transform = `translate(${x + diffX}px, ${y + diffY}px)`;
-      selectedNodeRef.current.style.transform = transform;
+        return;
+      }
 
-      return;
-    }
+      if (draggingState === "panning") {
+        setPanOffsetPos({
+          x: e.clientX - panStartPos.x,
+          y: e.clientY - panStartPos.y,
+        });
 
-    if (isPanning) {
-      setPanOffsetPos({
-        x: e.clientX - panStartPos.x,
-        y: e.clientY - panStartPos.y,
-      });
-    }
-  };
+        return;
+      }
+    },
+    [
+      draggingState,
+      setSingleNodePosition,
+      selectedNodeID,
+      scale,
+      selectedNode,
+      panStartPos,
+      setPanOffsetPos,
+    ]
+  );
 
-  // idea: reset
-  const handleMouseUp = () => {
-    if (isDraggingNode) {
-      const style = window.getComputedStyle(selectedNodeRef.current);
-      const matrix = style.transform;
-      const values = matrix.match(/matrix.*\((.+)\)/)[1].split(", ");
-
-      setSingleNodePosition(selectedNodeID, {
-        x: parseFloat(values[4]),
-        y: parseFloat(values[5]),
-      });
-    }
-
-    setIsPanning(false);
-    setIsDraggingNode(false);
-  };
+  // reset
+  const handleMouseUp = useCallback(() => {
+    setDraggingState(null);
+  }, [setDraggingState]);
 
   const handleWheel = useCallback(
     (e) => {
@@ -139,16 +145,55 @@ function App() {
     [panOffsetPos, scale, setScale, setPanOffsetPos]
   );
 
+  // set up event handlers
   useEffect(() => {
     const wrapper = whiteboardWrapperRef.current;
     if (!wrapper) return;
 
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
     wrapper.addEventListener("wheel", handleWheel, { passive: false });
 
     return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
       wrapper.removeEventListener("wheel", handleWheel);
     };
-  }, [scale, panOffsetPos, handleWheel]);
+  }, [scale, panOffsetPos, handleMouseMove, handleMouseUp, handleWheel]);
+
+  // set up tree
+  useEffect(() => {
+    const tree = new RBush();
+
+    const items = initNodes.map((node) => ({
+      minX: node.position.x,
+      minY: node.position.y,
+      maxX: node.position.x + node.dimension.width,
+      maxY: node.position.y + node.dimension.height,
+      node: node, // Store original data
+    }));
+
+    tree.load(items);
+
+    setTree(tree);
+  }, [initNodes, setTree]);
+
+  // set up observer
+  useEffect(() => {
+    const container = whiteboardWrapperRef.current;
+
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      const { x, y } = entries[0].target.getBoundingClientRect();
+      const rect = { x, y, width, height };
+
+      setWrapperRect(rect);
+    });
+
+    observer.observe(container);
+
+    return () => observer.disconnect();
+  }, [setWrapperRect]);
 
   return (
     <main
@@ -161,21 +206,25 @@ function App() {
         ref={whiteboardWrapperRef}
         onMouseDown={handleMouseDown}
       >
-        <div
-          className="whiteboard"
-          style={{
-            transform: `translate(${panOffsetPos.x}px, ${panOffsetPos.y}px) scale(${scale})`,
-            transformOrigin: "0 0",
-          }}
-        >
-          <div className="whiteboard-nodes">
-            {initNodes.map((node) => {
-              return <Node key={node.id} node={node} />;
-            })}
-          </div>
-        </div>
+        {wrapperRect && (
+          <>
+            <div
+              className="whiteboard"
+              style={{
+                transform: `translate(${panOffsetPos.x}px, ${panOffsetPos.y}px) scale(${scale})`,
+                transformOrigin: "0 0",
+              }}
+            >
+              <div className="whiteboard-nodes">
+                {initNodes.map((node) => {
+                  return <Node key={node.id} node={node} />;
+                })}
+              </div>
+            </div>
 
-        <Canvas />
+            <Canvas />
+          </>
+        )}
       </div>
     </main>
   );

@@ -57,6 +57,14 @@ const useApp = create((set) => ({
       };
     }),
 
+  // debug
+  alignmentCoords: null,
+  setAlignmentCoords: (coords) =>
+    set((state) => {
+      return { ...state, alignmentCoords: coords };
+    }),
+  // debug
+
   // edges
   initialEdges,
   selectedEdge: null,

@@ -5,9 +5,6 @@ import useApp from "../../store/useApp";
 import "./Node.css";
 
 const Node = memo(({ node }) => {
-  // debug
-  console.log(node.id, "render");
-
   const isSelected = useApp((state) => state.selectedNodeID === node.id);
 
   return (

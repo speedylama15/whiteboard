@@ -2,119 +2,51 @@ import { useEffect, useRef } from "react";
 
 import useApp from "../../store/useApp";
 
-import { getNodeCoords } from "../../utils/getNodeCoords";
-import { getAlignments } from "../../utils/getAlignments";
-
 import "./Canvas.css";
 
 const Canvas = () => {
   const tree = useApp((state) => state.tree);
-  const wrapperRect = useApp((state) => state.wrapperRect);
+  const alignmentCoords = useApp((state) => state.alignmentCoords);
+
   const scale = useApp((state) => state.scale);
   const panOffsetPos = useApp((state) => state.panOffsetPos);
-  const selectedNode = useApp((state) => state.selectedNode);
+
+  const wrapperRect = useApp((state) => state.wrapperRect);
 
   const canvasRef = useRef();
-  const ctx = useRef;
 
-  // debug: for visual purposes
   useEffect(() => {
-    if (!tree) return;
+    if (!alignmentCoords) return;
 
     const canvas = canvasRef.current;
-    ctx.current = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
 
-    ctx.current.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-    // saves the current canvas state (transforms, styles, clipping)
-    ctx.current.save();
-    ctx.current.translate(panOffsetPos.x, panOffsetPos.y);
-    ctx.current.scale(scale, scale);
+    ctx.save();
+    ctx.translate(panOffsetPos.x, panOffsetPos.y);
+    ctx.scale(scale, scale);
 
-    // restores back to the last saved state
-    ctx.current.restore();
-  }, [tree, panOffsetPos, scale, ctx]);
+    const { horizontal, vertical } = alignmentCoords;
 
-  useEffect(() => {
-    if (!selectedNode) return;
+    // Horizontal lines
+    horizontal.forEach((y) => {
+      ctx.beginPath();
+      ctx.moveTo(-10000, y.coord);
+      ctx.lineTo(10000, y.coord);
+      ctx.stroke();
+    });
 
-    ctx.current.clearRect(
-      0,
-      0,
-      canvasRef.current.width,
-      canvasRef.current.height
-    );
+    // Vertical lines
+    vertical.forEach((x) => {
+      ctx.beginPath();
+      ctx.moveTo(x.coord, -10000);
+      ctx.lineTo(x.coord, 10000);
+      ctx.stroke();
+    });
 
-    const BOUNDARY = 100;
-    const { dimension, position } = selectedNode;
-    const { width, height } = dimension;
-    const { x, y } = position;
-
-    ctx.current.save();
-    ctx.current.translate(panOffsetPos.x, panOffsetPos.y);
-    ctx.current.scale(scale, scale);
-
-    const selectedNodeCoords = getNodeCoords(selectedNode);
-
-    tree
-      .search({
-        minX: x - BOUNDARY,
-        maxX: x + width + BOUNDARY,
-        minY: y - BOUNDARY,
-        maxY: y + height + BOUNDARY,
-      })
-      .filter((data) => data.node.id !== selectedNode.id)
-      .forEach((data) => {
-        const { node } = data;
-
-        const coords = getNodeCoords(node);
-
-        const { horizontal, vertical } = getAlignments(
-          selectedNodeCoords,
-          coords,
-          10
-        );
-
-        if (horizontal.length) {
-          // fix
-          horizontal.forEach((y) => {
-            ctx.current.beginPath();
-            ctx.current.moveTo(0, y);
-            ctx.current.lineTo(10000, y);
-            ctx.current.stroke();
-          });
-        }
-        if (vertical.length) {
-          // fix
-          vertical.forEach((x) => {
-            ctx.current.beginPath();
-            ctx.current.moveTo(x, 0);
-            ctx.current.lineTo(x, 10000);
-            ctx.current.stroke();
-          });
-        }
-
-        ctx.current.strokeStyle = "red";
-        ctx.current.lineWidth = 3;
-        ctx.current.strokeRect(
-          node.position.x,
-          node.position.y,
-          node.dimension.width,
-          node.dimension.height
-        );
-      });
-
-    ctx.current.strokeStyle = "gold";
-    ctx.current.lineWidth = 5;
-    ctx.current.strokeRect(
-      x - BOUNDARY,
-      y - BOUNDARY,
-      BOUNDARY + BOUNDARY + width,
-      BOUNDARY + BOUNDARY + height
-    );
-
-    ctx.current.restore();
-  }, [tree, selectedNode, ctx, panOffsetPos, scale]);
+    ctx.restore();
+  }, [tree, panOffsetPos, alignmentCoords, scale]);
 
   return (
     <canvas

@@ -7,6 +7,7 @@ import Canvas from "./components/Canvas/Canvas";
 import useApp from "./store/useApp";
 
 import "./App.css";
+import { getAllAlignments } from "./utils/getAllAlignments";
 
 function App() {
   // Panning
@@ -22,11 +23,14 @@ function App() {
   const draggingState = useApp((state) => state.draggingState);
   const setDraggingState = useApp((state) => state.setDraggingState);
 
+  const tree = useApp((state) => state.tree);
+  const setTree = useApp((state) => state.setTree);
+  const setAlignmentCoords = useApp((state) => state.setAlignmentCoords);
+
   const selectedNodeID = useApp((state) => state.selectedNodeID);
   const selectedNode = useApp((state) => state.selectedNode);
   const setSelectedNodeID = useApp((state) => state.setSelectedNodeID);
   const setSelectedNode = useApp((state) => state.setSelectedNode);
-  const setTree = useApp((state) => state.setTree);
   const setSingleNodePosition = useApp((state) => state.setSingleNodePosition);
 
   // wrapperRect
@@ -87,6 +91,55 @@ function App() {
         // re-renders only the selected node
         setSingleNodePosition(selectedNodeID, { x: newX, y: newY });
 
+        // todo
+        const BOUNDARY = 500;
+
+        const { dimension } = selectedNode;
+        const { width, height } = dimension;
+
+        const nearbyNodes = tree
+          .search({
+            minX: newX - BOUNDARY,
+            maxX: newX + width + BOUNDARY,
+            minY: newY - BOUNDARY,
+            maxY: newY + height + BOUNDARY,
+          })
+          .filter((data) => data.node.id !== selectedNode.id);
+
+        const baseNode = {
+          id: selectedNode.id,
+          dimension: selectedNode.dimension,
+          position: { x: newX, y: newY },
+        };
+
+        // debug: feeling a bit iffy about this
+        const alignments = getAllAlignments(baseNode, nearbyNodes, 5);
+        setAlignmentCoords(alignments);
+
+        // debug: this is very mumbo jumbo
+        let toSnapX = 0;
+        let toSnapY = 0;
+        alignments.horizontal.forEach((y) => {
+          const coord = y.coord;
+          const currentCoord = y.currCoord;
+
+          toSnapY = coord - currentCoord;
+        });
+
+        alignments.vertical.forEach((x) => {
+          const coord = x.coord;
+          const currentCoord = x.currCoord;
+
+          toSnapX = coord - currentCoord;
+        });
+
+        setSingleNodePosition(selectedNodeID, {
+          x: newX + toSnapX,
+          y: newY + toSnapY,
+        });
+        // debug
+        // todo
+
         return;
       }
 
@@ -107,6 +160,8 @@ function App() {
       selectedNode,
       panStartPos,
       setPanOffsetPos,
+      tree,
+      setAlignmentCoords,
     ]
   );
 

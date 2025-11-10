@@ -1,49 +1,77 @@
 import { getNodeCoords } from "./getNodeCoords";
 
 export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
-  const alignments = { horizontal: [], vertical: [] };
+  let horizontal = [];
+  let vertical = [];
 
-  const baseNodeCoords = getNodeCoords(baseNode);
+  const { x: bXs, y: bYs } = getNodeCoords(baseNode);
 
-  nearbyNodes.forEach((nearbyNode) => {
-    const nearbyNodeCoords = getNodeCoords(nearbyNode.node);
+  let s_gap = threshold;
 
-    const { x, y } = nearbyNodeCoords;
+  nearbyNodes.forEach((item) => {
+    const nearbyNode = item.node;
+    const { x: nXs, y: nYs } = getNodeCoords(nearbyNode);
 
-    Object.entries(x).forEach((nearbyX) => {
-      Object.entries(baseNodeCoords.x).forEach((baseX) => {
-        if (Math.abs(baseX[1] - nearbyX[1]) <= threshold) {
-          const data = {
-            b_id: baseNodeCoords.id,
-            n_id: nearbyNodeCoords.id,
-            b_match_location: baseX[0],
-            n_match_location: nearbyX[0],
-            currCoord: baseX[1],
-            coord: nearbyX[1],
-          };
+    nXs.forEach((n_x) => {
+      bXs.forEach((b_x) => {
+        const start = Math.min(...[...nYs, ...bYs]) - 10;
+        const end = Math.max(...[...nYs, ...bYs]) + 10;
 
-          alignments.vertical.push(data);
+        const gap = Math.abs(b_x - n_x);
+
+        if (gap <= 5) {
+          if (gap < s_gap) {
+            vertical = [];
+            s_gap = gap;
+          }
+
+          if (gap === s_gap) {
+            const data = {
+              gap: n_x - b_x,
+              currCoord: b_x,
+              coordToSnap: n_x,
+              baseNode,
+              nearbyNode,
+              lineStart: [n_x, start],
+              lineEnd: [n_x, end],
+            };
+
+            vertical.push(data);
+          }
         }
       });
     });
 
-    Object.entries(y).forEach((nearbyY) => {
-      Object.entries(baseNodeCoords.y).forEach((baseY) => {
-        if (Math.abs(baseY[1] - nearbyY[1]) <= threshold) {
-          const data = {
-            b_id: baseNodeCoords.id,
-            n_id: nearbyNodeCoords.id,
-            b_match_location: baseY[0],
-            n_match_location: nearbyY[0],
-            currCoord: baseY[1],
-            coord: nearbyY[1],
-          };
+    nYs.forEach((n_y) => {
+      bYs.forEach((b_y) => {
+        const start = Math.min(...[...nXs, ...bXs]) - 10;
+        const end = Math.max(...[...nXs, ...bXs]) + 10;
 
-          alignments.horizontal.push(data);
+        const gap = Math.abs(b_y - n_y);
+
+        if (gap <= 5) {
+          if (gap < s_gap) {
+            horizontal = [];
+            s_gap = gap;
+          }
+
+          if (gap === s_gap) {
+            const data = {
+              gap: n_y - b_y,
+              currCoord: b_y,
+              coordToSnap: n_y,
+              baseNode,
+              nearbyNode,
+              lineStart: [start, n_y],
+              lineEnd: [end, n_y],
+            };
+
+            horizontal.push(data);
+          }
         }
       });
     });
   });
 
-  return alignments;
+  return { horizontal, vertical };
 };

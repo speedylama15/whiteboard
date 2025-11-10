@@ -1,23 +1,9 @@
 import { create } from "zustand";
+import RBush from "rbush";
 
-import initEdges from "../data/initEdges";
 import initNodesMap from "../data/initNodesMap";
 
 const useApp = create((set) => ({
-  // debug
-  alignmentCoords: null,
-  setAlignmentCoords: (coords) =>
-    set((state) => {
-      return { ...state, alignmentCoords: coords };
-    }),
-  initEdges,
-  setInitEdges: (edge) =>
-    set((state) => ({
-      initEdges: [...state.initEdges, edge],
-    })),
-  // debug
-
-  // idea:
   mouseState: null,
   setMouseState: (mouseState) => set((state) => ({ ...state, mouseState })),
 
@@ -30,13 +16,24 @@ const useApp = create((set) => ({
       },
     })),
 
-  // select node
-  selectedNodeID: null,
-  setSelectedNodeID: (id) => set((state) => ({ ...state, selectedNodeID: id })),
-  // fix: delete?
-  selectedNode: null,
-  setSelectedNode: (node) => set((state) => ({ ...state, selectedNode: node })),
-  // fix: delete?
+  // tree
+  rTree: new RBush(),
+  verticalLines: [],
+  horizontalLines: [],
+  setVerticalLines: (lines) =>
+    set((state) => ({ ...state, verticalLines: lines })),
+  setHorizontalLines: (lines) =>
+    set((state) => ({ ...state, horizontalLines: lines })),
+
+  // selection_node
+  selectedNodesMap: {},
+  setSelectedNodesMap: (obj) =>
+    set((state) => ({
+      ...state,
+      selectedNodesMap: { ...state.selectedNodesMap, ...obj },
+    })),
+  resetSelectedNodesMap: () =>
+    set((state) => ({ ...state, selectedNodesMap: {} })),
 
   // wrapperRect
   wrapperRect: null,
@@ -46,18 +43,15 @@ const useApp = create((set) => ({
       wrapperRect: rect,
     })),
 
-  // tree
-  tree: null,
-  setTree: (tree) => set((state) => ({ ...state, tree })),
-
   // panning
   scale: 1,
   setScale: (value) => set((state) => ({ ...state, scale: value })),
-  panStartPos: { x: 0, y: 0 },
-  setPanStartPos: (panStartPos) => set((state) => ({ ...state, panStartPos })),
-  panOffsetPos: { x: 0, y: 0 },
-  setPanOffsetPos: (panOffsetPos) =>
-    set((state) => ({ ...state, panOffsetPos })),
+  startCoords: { x: 0, y: 0 },
+  setStartCoords: (coords) =>
+    set((state) => ({ ...state, startCoords: coords })),
+  panOffsetCoords: { x: 0, y: 0 },
+  setPanOffsetCoords: (panOffsetCoords) =>
+    set((state) => ({ ...state, panOffsetCoords })),
 }));
 
 export default useApp;

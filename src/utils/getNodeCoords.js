@@ -6,7 +6,7 @@ export const getNodeCoords = (node) => {
 
   return {
     id: id,
-    x: { lx: x, cx: x + width / 2, rx: x + width },
-    y: { ty: y, cy: y + height / 2, by: y + height },
+    x: [x, x + width / 2, x + width],
+    y: [y, y + height / 2, y + height],
   };
 };

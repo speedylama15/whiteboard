@@ -6,11 +6,12 @@ import "./Canvas.css";
 
 // todo: addItemTreeMap
 const Canvas = () => {
+  const mouseState = useApp((state) => state.mouseState);
+
   const nodesMap = useApp((state) => state.nodesMap);
   const selectedNodesMap = useApp((state) => state.selectedNodesMap);
 
   const rTree = useApp((state) => state.rTree);
-  const mouseState = useApp((state) => state.mouseState);
   const verticalLines = useApp((state) => state.verticalLines);
   const horizontalLines = useApp((state) => state.horizontalLines);
 
@@ -25,8 +26,19 @@ const Canvas = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+
+    // Add this before any drawing
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = wrapperRect.width * dpr;
+    canvas.height = wrapperRect.height * dpr;
+    canvas.style.width = wrapperRect.width + "px";
+    canvas.style.height = wrapperRect.height + "px";
+    ctx.imageSmoothingEnabled = false;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
+
+    ctx.scale(dpr, dpr);
     ctx.translate(panOffsetCoords.x, panOffsetCoords.y);
     ctx.scale(scale, scale);
     ctx.lineWidth = 3;
@@ -46,7 +58,7 @@ const Canvas = () => {
 
       horizontalLines.forEach(({ lineStart, lineEnd }) => {
         ctx.strokeStyle = "red";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1 / scale;
         ctx.beginPath();
         ctx.moveTo(lineStart[0], lineStart[1]);
         ctx.lineTo(lineEnd[0], lineEnd[1]);
@@ -55,7 +67,7 @@ const Canvas = () => {
 
       verticalLines.forEach(({ lineStart, lineEnd }) => {
         ctx.strokeStyle = "red";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1 / scale;
         ctx.beginPath();
         ctx.moveTo(lineStart[0], lineStart[1]);
         ctx.lineTo(lineEnd[0], lineEnd[1]);
@@ -73,6 +85,7 @@ const Canvas = () => {
     mouseState,
     verticalLines,
     horizontalLines,
+    wrapperRect,
   ]);
 
   return (

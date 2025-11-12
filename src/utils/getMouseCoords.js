@@ -1,8 +1,6 @@
-export const getWhiteboardCoords = (e, wrapperRef, panOffsetCoords, scale) => {
-  const rect = wrapperRef.current.getBoundingClientRect();
-
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
+export const getWhiteboardCoords = (e, panOffsetCoords, scale, wrapperRect) => {
+  const clickX = e.clientX - wrapperRect.x;
+  const clickY = e.clientY - wrapperRect.y;
 
   const x = (clickX - panOffsetCoords.x) / scale;
   const y = (clickY - panOffsetCoords.y) / scale;

@@ -1,11 +1,14 @@
 import { useRef, useEffect, useCallback } from "react";
 
 import Node from "./components/Node/Node";
+import Edge from "./components/Edge/Edge";
+import NewEdge from "./components/NewEdge/NewEdge";
 import Canvas from "./components/Canvas/Canvas";
 
 import useApp from "./store/useApp";
 
 import { getAllAlignments } from "./utils/getAllAlignments";
+import { getWhiteboardCoords } from "./utils/getMouseCoords";
 
 import "./App.css";
 
@@ -20,6 +23,12 @@ const App = () => {
   const selectedNodesMap = useApp((state) => state.selectedNodesMap);
   const setSelectedNodesMap = useApp((state) => state.setSelectedNodesMap);
   const resetSelectedNodesMap = useApp((state) => state.resetSelectedNodesMap);
+
+  const edgesMap = useApp((state) => state.edgesMap);
+  const newEdgeStartCoords = useApp((state) => state.newEdgeStartCoords);
+  const setNewEdgeTargetCoords = useApp(
+    (state) => state.setNewEdgeTargetCoords
+  );
 
   const mouseState = useApp((state) => state.mouseState);
   const setMouseState = useApp((state) => state.setMouseState);
@@ -98,6 +107,22 @@ const App = () => {
       const wrapper = whiteboardWrapperRef.current;
       if (!wrapper) return;
 
+      // REVIEW:
+      if (mouseState === "dragging-edge") {
+        // debug
+        console.log("setting up new edge");
+
+        const coords = getWhiteboardCoords(
+          e,
+          panOffsetCoords,
+          scale,
+          wrapperRect
+        );
+        setNewEdgeTargetCoords(coords);
+
+        return;
+      }
+
       if (mouseState === "moving-node") {
         const diffX = (e.clientX - startCoordsRef.current.x) / scale;
         const diffY = (e.clientY - startCoordsRef.current.y) / scale;
@@ -138,8 +163,8 @@ const App = () => {
 
           let gapX = 0;
           let gapY = 0;
-          // fix
-          const alignments = getAllAlignments(baseNode, nearbyNodes, 15);
+
+          const alignments = getAllAlignments(baseNode, nearbyNodes, 5);
           if (alignments.vertical.length) {
             gapX = alignments.vertical[0].gap;
             setVerticalLines(alignments.vertical);
@@ -184,17 +209,22 @@ const App = () => {
       rTree,
       setVerticalLines,
       setHorizontalLines,
+      panOffsetCoords,
+      setNewEdgeTargetCoords,
+      wrapperRect,
     ]
   );
 
   // reset
   const handleMouseUp = useCallback(() => {
     setMouseState(null);
+    setVerticalLines([]);
+    setHorizontalLines([]);
     startCoordsRef.current = {
       x: 0,
       y: 0,
     };
-  }, [setMouseState]);
+  }, [setMouseState, setVerticalLines, setHorizontalLines]);
 
   const handleWheel = useCallback(
     (e) => {
@@ -261,6 +291,10 @@ const App = () => {
 
   return (
     <main className="page">
+      <button onClick={() => console.log("rTree", rTree.toJSON())}>
+        Click
+      </button>
+
       <div
         className="whiteboard-wrapper"
         ref={whiteboardWrapperRef}
@@ -278,6 +312,14 @@ const App = () => {
               return <Node key={nodeID} nodeID={nodeID} />;
             })}
           </div>
+
+          <div className="whiteboard-edges">
+            {Object.keys(edgesMap).map((edgeID) => {
+              return <Edge key={edgeID} edgeID={edgeID} />;
+            })}
+          </div>
+
+          {newEdgeStartCoords && <NewEdge />}
 
           {/* review */}
         </div>

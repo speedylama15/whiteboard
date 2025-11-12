@@ -2,10 +2,29 @@ import { create } from "zustand";
 import RBush from "rbush";
 
 import initNodesMap from "../data/initNodesMap";
+import initEdgesMap from "../data/initEdgesMap";
 
 const useApp = create((set) => ({
   mouseState: null,
   setMouseState: (mouseState) => set((state) => ({ ...state, mouseState })),
+
+  edgesMap: initEdgesMap,
+  updateEdge: (edgeID, updatedEdge) =>
+    set((state) => ({
+      edgesMap: {
+        ...state.edgesMap,
+        [edgeID]: updatedEdge,
+      },
+    })),
+  newEdgeStartCoords: null,
+  newEdgeStartLocation: null,
+  newEdgeTargetCoords: null,
+  setNewEdgeStartCoords: (coords) =>
+    set((state) => ({ ...state, newEdgeStartCoords: coords })),
+  setNewEdgeStartLocation: (loc) =>
+    set((state) => ({ ...state, newEdgeStartLocation: loc })),
+  setNewEdgeTargetCoords: (coords) =>
+    set((state) => ({ ...state, newEdgeTargetCoords: coords })),
 
   nodesMap: initNodesMap,
   updateNode: (nodeID, updatedNode) =>
@@ -17,6 +36,7 @@ const useApp = create((set) => ({
     })),
 
   // tree
+  // mutated, never set stated
   rTree: new RBush(),
   verticalLines: [],
   horizontalLines: [],

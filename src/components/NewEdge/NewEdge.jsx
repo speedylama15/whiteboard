@@ -1,5 +1,3 @@
-import React from "react";
-
 import useApp from "../../store/useApp";
 
 import { getControlPoint } from "../../utils/getControlPoint";
@@ -7,33 +5,20 @@ import { getControlPoint } from "../../utils/getControlPoint";
 import "./NewEdge.css";
 
 const NewEdge = () => {
-  const {
-    isDisplayed,
-    id,
-    sourceNodeID,
-    targetNodeID,
-    sourceLocation,
-    targetLocation,
-    sourceCoords,
-    targetCoords,
-    targetOffset,
-  } = useApp((state) => state.newEdge);
+  const start = useApp((state) => state.newEdgeStartCoords);
+  const location = useApp((state) => state.newEdgeStartLocation);
+  const target = useApp((state) => state.newEdgeTargetCoords);
 
-  // debug
-  console.log({ sourceCoords });
+  const sControl = getControlPoint(start, location, 150);
+  // const tControl = getControlPoint(newEdgeTargetCoords, tLoc, 150);
 
-  const sControl = getControlPoint(sourceCoords, sourceLocation, 100);
-  const pathData = `M ${sourceCoords.x},${sourceCoords.y} C ${sControl.x}, ${sControl.y} ${targetCoords.x}, ${targetCoords.y}, ${targetCoords.x}, ${targetCoords.y}`;
+  const pathData = `M ${start.x},${start.y} C ${sControl.x}, ${sControl.y} ${target.x}, ${target.y}, ${target.x}, ${target.y}`;
 
   return (
     <>
-      {isDisplayed && (
-        <div className="new-edge">
-          <svg>
-            <path d={pathData} stroke="#f700ffff" fill="none" strokeWidth={2} />
-          </svg>
-        </div>
-      )}
+      <svg>
+        <path d={pathData} stroke="#000000ff" fill="none" strokeWidth={2} />
+      </svg>
     </>
   );
 };

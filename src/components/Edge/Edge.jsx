@@ -7,14 +7,13 @@ import { getPathData } from "../../utils/getPathData";
 
 import "./Edge.css";
 
-const Edge = memo(({ edge }) => {
+const Edge = memo(({ edgeID }) => {
   // idea: maybe requestAnimation thingy may help, but I am not sure
+  const edge = useApp((state) => state.edgesMap[edgeID]);
   const { sourceNodeID, targetNodeID, sourceLocation, targetLocation } = edge;
 
-  const nodesMap = useApp((state) => state.nodesMap);
-  const sourceNode = nodesMap[sourceNodeID];
-  const targetNode = nodesMap[targetNodeID];
-
+  const sourceNode = useApp((state) => state.nodesMap[sourceNodeID]);
+  const targetNode = useApp((state) => state.nodesMap[targetNodeID]);
   const sourceHandleCoords = getHandleCoords(sourceNode, sourceLocation);
   const targetHandleCoords = getHandleCoords(targetNode, targetLocation);
 
@@ -28,7 +27,7 @@ const Edge = memo(({ edge }) => {
   return (
     <div className="edge">
       <svg>
-        <path d={pathData} stroke="#ff8400ff" fill="none" strokeWidth={2} />
+        <path d={pathData} stroke="#000000ff" fill="none" strokeWidth={2} />
       </svg>
     </div>
   );

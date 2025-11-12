@@ -5,8 +5,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #0008ff95;
-  /* border-radius: 7px; */
+  background-color: #45acff;
+  border-radius: 7px;
   min-width: 50px;
   min-height: 50px;
   padding: 16px;
@@ -20,6 +20,6 @@
   outline: none;
 }
 
-/* .node[data-is-selected="true"] {
-  box-shadow: #ffd501 0px 0px 0px 3px;
-} */
+.node[data-is-selected="true"] {
+  box-shadow: #00eaff 0px 0px 0px 3px;
+}

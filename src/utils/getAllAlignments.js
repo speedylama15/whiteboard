@@ -14,8 +14,9 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
 
     nXs.forEach((n_x) => {
       bXs.forEach((b_x) => {
-        const start = Math.min(...[...nYs, ...bYs]) - 10;
-        const end = Math.max(...[...nYs, ...bYs]) + 10;
+        const yCoords = [...nYs, ...bYs];
+        const start = Math.min(...yCoords) - 10;
+        const end = Math.max(...yCoords) + 10;
 
         const gap = Math.abs(b_x - n_x);
 
@@ -44,8 +45,9 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
 
     nYs.forEach((n_y) => {
       bYs.forEach((b_y) => {
-        const start = Math.min(...[...nXs, ...bXs]) - 10;
-        const end = Math.max(...[...nXs, ...bXs]) + 10;
+        const xCoords = [...nXs, ...bXs];
+        const start = Math.min(...xCoords) - 10;
+        const end = Math.max(...xCoords) + 10;
 
         const gap = Math.abs(b_y - n_y);
 

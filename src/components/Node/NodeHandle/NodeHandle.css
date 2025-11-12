@@ -1,11 +1,19 @@
 .node-handle {
   position: absolute;
-
   width: 12px;
   height: 12px;
   background-color: #fff;
   border: 1px solid #000;
   border-radius: 50%;
+  cursor: pointer;
+}
+
+.node-handle:hover {
+  background-color: #ddd;
+}
+
+.node-handle:active {
+  background-color: #ddd;
 }
 
 .node-handle[data-handle-location="top"] {

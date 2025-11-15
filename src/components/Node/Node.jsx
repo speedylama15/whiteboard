@@ -4,29 +4,32 @@ import NodeHandle from "./NodeHandle/NodeHandle";
 import NodeConnector from "./NodeConnector/NodeConnector";
 
 import useApp from "../../store/useApp";
+import useTree from "../../store/useTree";
+import useCoords from "../../store/useCoords";
 
 import "./Node.css";
 
-// I do not have to remove and insert when a node is getting updated
-// all I have to do is search with the appropriate data
-// but I need to do so for visual sake
-
 const Node = memo(({ nodeID }) => {
-  // debug
-  console.log("render", nodeID);
-
-  const rTree = useApp((state) => state.rTree);
   const node = useApp((state) => state.nodesMap[nodeID]);
-  const bbox = {
-    minX: node.position.x,
-    minY: node.position.y,
-    maxX: node.position.x + node.dimension.width,
-    maxY: node.position.y + node.dimension.height,
-    node: node,
-  };
   const isSelected = useApp((state) =>
     state.selectedNodesMap[nodeID] ? true : false
   );
+
+  const mouseState = useApp((state) => state.mouseState);
+
+  const set_nodesTree = useTree((state) => state.set_nodesTree);
+  const set_startXY = useCoords((state) => state.set_startXY);
+  const set_selectedNodesMap = useApp((state) => state.set_selectedNodesMap);
+  const set_mouseState = useApp((state) => state.set_mouseState);
+
+  const handleMouseDown = (e) => {
+    e.stopPropagation();
+
+    set_nodesTree([nodeID]);
+    set_startXY({ x: e.clientX, y: e.clientY });
+    set_selectedNodesMap({ [nodeID]: node });
+    set_mouseState("node_move");
+  };
 
   return (
     <div
@@ -38,22 +41,24 @@ const Node = memo(({ nodeID }) => {
         height: node.dimension.height,
         transform: `translate(${node.position.x}px, ${node.position.y}px)`,
       }}
+      onMouseDown={handleMouseDown}
     >
       <div
         className="node_text"
         contentEditable={true}
         suppressContentEditableWarning={true}
-        style={{ minWidth: "2px", backgroundColor: "#152186ff" }}
       >
         {node.content.text}
       </div>
 
-      <>
-        <NodeConnector connectorLocation="top" />
-        <NodeConnector connectorLocation="right" />
-        <NodeConnector connectorLocation="bottom" />
-        <NodeConnector connectorLocation="left" />
-      </>
+      {mouseState === "edge_create" && (
+        <>
+          <NodeConnector node={node} connectorLocation="top" />
+          <NodeConnector node={node} connectorLocation="right" />
+          <NodeConnector node={node} connectorLocation="bottom" />
+          <NodeConnector node={node} connectorLocation="left" />
+        </>
+      )}
 
       {isSelected && (
         <>

@@ -1,9 +1,0 @@
-svg {
-  shape-rendering: crispEdges;
-}
-
-line,
-path,
-rect {
-  shape-rendering: crispEdges;
-}

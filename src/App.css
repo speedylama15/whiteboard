@@ -8,7 +8,7 @@
 }
 
 body {
-  background-color: #add8e6;
+  background-color: #deccb2;
 }
 
 p {
@@ -17,13 +17,30 @@ p {
 
 .page {
   display: flex;
+  flex-direction: column;
   width: 100vw;
   height: 100vh;
 }
 
+.toolbar {
+  display: flex;
+  gap: 5px;
+  padding: 18px;
+  background-color: #deccb2;
+}
+
+.toolbar > button {
+  font-weight: 700;
+  background-color: #dde8ff;
+  padding: 12px;
+  border: 1px solid #000;
+  border-radius: 7px;
+  box-shadow: #000 5px 5px 0px -1px;
+}
+
 .whiteboard-wrapper {
   position: relative;
-  background-color: #99d0e6;
+  background-color: #e2d0b6;
   width: 75vw;
   height: 75vh;
   margin: auto;
@@ -36,8 +53,8 @@ p {
   left: 0;
   width: 200px;
   height: 200px;
-  background-color: #0087ff;
-  /* background-color: transparent; */
+  /* background-color: #0087ff; */
+  background-color: transparent;
 }
 
 svg {
@@ -59,4 +76,18 @@ path {
 circle {
   pointer-events: auto;
   z-index: 10;
+}
+
+svg {
+  shape-rendering: crispEdges;
+  pointer-events: none;
+  z-index: -1;
+}
+
+line,
+path,
+rect {
+  shape-rendering: crispEdges;
+  pointer-events: none;
+  z-index: -1;
 }

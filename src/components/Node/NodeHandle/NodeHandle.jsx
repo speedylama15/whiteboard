@@ -1,31 +1,34 @@
 import { memo } from "react";
 
 import useApp from "../../../store/useApp";
+import useTree from "../../../store/useTree";
+import useEdge from "../../../store/useEdge";
 
 import { getHandleCoords } from "../../../utils/getHandleCoords";
 
 import "./NodeHandle.css";
 
 const NodeHandle = memo(({ node, handleLocation }) => {
-  const setMouseState = useApp((state) => state.setMouseState);
-
-  const setNewEdgeStartCoords = useApp((state) => state.setNewEdgeStartCoords);
-  const setNewEdgeStartLocation = useApp(
-    (state) => state.setNewEdgeStartLocation
-  );
-  const setNewEdgeTargetCoords = useApp(
-    (state) => state.setNewEdgeTargetCoords
-  );
-
   const handleCoords = getHandleCoords(node, handleLocation);
+
+  const set_mouseState = useApp((state) => state.set_mouseState);
+  const set_newEdge = useEdge((state) => state.set_newEdge);
+  const set_nodesTree = useTree((state) => state.set_nodesTree);
 
   const handleMouseDown = (e) => {
     e.stopPropagation();
 
-    setMouseState("dragging-edge");
-    setNewEdgeStartCoords(handleCoords);
-    setNewEdgeStartLocation(handleLocation);
-    setNewEdgeTargetCoords(handleCoords);
+    set_nodesTree([node.id]);
+    set_mouseState("edge_create");
+    set_newEdge({
+      id: `edge-${Math.random()}`,
+      sourceID: node.id,
+      sourceLoc: handleLocation,
+      targetID: null,
+      targetLoc: null,
+      targetXY: handleCoords,
+      offset: 0,
+    });
   };
 
   return (

@@ -7,22 +7,17 @@ import { getPathData } from "../../utils/getPathData";
 
 import "./Edge.css";
 
+// TODO: needs to be selectable via click
 const Edge = memo(({ edgeID }) => {
-  // idea: maybe requestAnimation thingy may help, but I am not sure
   const edge = useApp((state) => state.edgesMap[edgeID]);
-  const { sourceNodeID, targetNodeID, sourceLocation, targetLocation } = edge;
+  const { sourceID, targetID, sourceLoc, targetLoc } = edge;
 
-  const sourceNode = useApp((state) => state.nodesMap[sourceNodeID]);
-  const targetNode = useApp((state) => state.nodesMap[targetNodeID]);
-  const sourceHandleCoords = getHandleCoords(sourceNode, sourceLocation);
-  const targetHandleCoords = getHandleCoords(targetNode, targetLocation);
+  const sourceNode = useApp((state) => state.nodesMap[sourceID]);
+  const targetNode = useApp((state) => state.nodesMap[targetID]);
+  const sourceXY = getHandleCoords(sourceNode, sourceLoc);
+  const targetXY = getHandleCoords(targetNode, targetLoc);
 
-  const pathData = getPathData(
-    sourceLocation,
-    targetLocation,
-    sourceHandleCoords,
-    targetHandleCoords
-  );
+  const pathData = getPathData(sourceLoc, targetLoc, sourceXY, targetXY);
 
   return (
     <div className="edge">

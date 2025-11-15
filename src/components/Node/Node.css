@@ -5,7 +5,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #45acff;
+  background-color: #ffa200c1;
   border-radius: 7px;
   min-width: 50px;
   min-height: 50px;
@@ -14,12 +14,14 @@
 }
 
 .node_text {
-  color: #bfc1d6;
+  color: #000;
   font-size: 18px;
+  font-weight: 900;
+  min-width: 2px;
   line-height: 1.4;
   outline: none;
 }
 
 .node[data-is-selected="true"] {
-  box-shadow: #00eaff 0px 0px 0px 3px;
+  box-shadow: #006eff 0px 0px 0px 5px;
 }

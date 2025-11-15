@@ -1,18 +1,18 @@
 const initEdgesMap = {
   "edge-1": {
     id: "edge-1",
-    sourceNodeID: "node-1",
-    targetNodeID: "node-4",
-    sourceLocation: "bottom",
-    targetLocation: "top",
+    sourceID: "node-1",
+    targetID: "node-4",
+    sourceLoc: "bottom",
+    targetLoc: "top",
     targetOffset: 0,
   },
   "edge-2": {
     id: "edge-2",
-    sourceNodeID: "node-3",
-    targetNodeID: "node-8",
-    sourceLocation: "left",
-    targetLocation: "right",
+    sourceID: "node-3",
+    targetID: "node-8",
+    sourceLoc: "left",
+    targetLoc: "right",
     targetOffset: 10,
   },
 };

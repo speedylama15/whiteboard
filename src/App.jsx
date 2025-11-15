@@ -3,228 +3,236 @@ import { useRef, useEffect, useCallback } from "react";
 import Node from "./components/Node/Node";
 import Edge from "./components/Edge/Edge";
 import NewEdge from "./components/NewEdge/NewEdge";
-import Canvas from "./components/Canvas/Canvas";
+
+import AlignmentLines from "./components/AlignmentLines/AlignmentLines";
+
+import NodesTree from "./components/Tree/NodesTree/NodesTree";
+import SearchBoxesTree from "./components/Tree/SearchBoxesTree/SearchBoxesTree";
 
 import useApp from "./store/useApp";
+import useTree from "./store/useTree";
+import useCoords from "./store/useCoords";
 
 import { getAllAlignments } from "./utils/getAllAlignments";
-import { getWhiteboardCoords } from "./utils/getMouseCoords";
 
 import "./App.css";
+import useEdge from "./store/useEdge";
+import { getWhiteboardCoords } from "./utils/getMouseCoords";
+
+function getClosestSide(node, point) {
+  const { position, dimension } = node;
+  const { x, y } = position;
+  const { width, height } = dimension;
+
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  const px = point.x - centerX;
+  const py = point.y - centerY;
+
+  const halfWidth = width / 2;
+  const halfHeight = height / 2;
+
+  if (px === 0) {
+    return py > 0 ? "bottom" : "top";
+  }
+
+  if (Math.abs(py / px) > halfHeight / halfWidth) {
+    return py > 0 ? "bottom" : "top";
+  } else {
+    return px > 0 ? "right" : "left";
+  }
+}
 
 const App = () => {
+  // <------- new ------->
   const nodesMap = useApp((state) => state.nodesMap);
-  const updateNode = useApp((state) => state.updateNode);
+  const set_node = useApp((state) => state.set_node);
 
-  const rTree = useApp((state) => state.rTree);
+  // nodes tree
+  const nodesTree = useTree((state) => state.nodesTree);
+  const reset_nodesTree = useTree((state) => state.reset_nodesTree);
+
+  // search boxes tree
+  const searchBoxesTree = useTree((state) => state.searchBoxesTree);
+  const set_searchBoxesTree = useTree((state) => state.set_searchBoxesTree);
+  const reset_searchBoxesTree = useTree((state) => state.reset_searchBoxesTree);
+
+  // selected nodes
+  const selectedNodesMap = useApp((state) => state.selectedNodesMap);
+  const reset_selectedNodesMap = useApp(
+    (state) => state.reset_selectedNodesMap
+  );
+
+  // mouse state
+  const mouseState = useApp((state) => state.mouseState);
+  const set_mouseState = useApp((state) => state.set_mouseState);
+
+  const wrapperRect = useApp((state) => state.wrapperRect);
+  const set_wrapperRect = useApp((state) => state.set_wrapperRect);
+
+  const startXY = useCoords((state) => state.startXY);
+
+  const set_newEdge = useEdge((state) => state.set_newEdge);
+  const reset_newEdge = useEdge((state) => state.reset_newEdge);
+
+  // <------- new ------->
+
   const setVerticalLines = useApp((state) => state.setVerticalLines);
   const setHorizontalLines = useApp((state) => state.setHorizontalLines);
 
-  const selectedNodesMap = useApp((state) => state.selectedNodesMap);
-  const setSelectedNodesMap = useApp((state) => state.setSelectedNodesMap);
-  const resetSelectedNodesMap = useApp((state) => state.resetSelectedNodesMap);
-
   const edgesMap = useApp((state) => state.edgesMap);
-  const newEdgeStartCoords = useApp((state) => state.newEdgeStartCoords);
-  const setNewEdgeTargetCoords = useApp(
-    (state) => state.setNewEdgeTargetCoords
-  );
-
-  const mouseState = useApp((state) => state.mouseState);
-  const setMouseState = useApp((state) => state.setMouseState);
-
-  const wrapperRect = useApp((state) => state.wrapperRect);
-  const setWrapperRect = useApp((state) => state.setWrapperRect);
 
   // panning
   const scale = useApp((state) => state.scale);
-  const panOffsetCoords = useApp((state) => state.panOffsetCoords);
-  const setScale = useApp((state) => state.setScale);
-  const setPanOffsetCoords = useApp((state) => state.setPanOffsetCoords);
+  const set_scale = useApp((state) => state.set_scale);
+  const panOffsetXY = useApp((state) => state.panOffsetXY);
+  const set_panOffsetXY = useApp((state) => state.set_panOffsetXY);
 
   // <------- ref ------->
   const whiteboardWrapperRef = useRef();
-  const startCoordsRef = useRef();
+  // <------- ref ------->
 
-  // init
-  const handleMouseDown = useCallback(
-    (e) => {
-      const node = e.target.closest(".node");
+  const handleMouseDown = useCallback(() => {
+    // this gets triggered, when non-node, edge element is clicked
+    reset_nodesTree();
+    reset_searchBoxesTree();
+    reset_selectedNodesMap();
+  }, [reset_nodesTree, reset_searchBoxesTree, reset_selectedNodesMap]);
 
-      if (node) {
-        const nodeID = node.dataset.nodeId;
-        const node_ = nodesMap[nodeID];
-
-        // todo
-        // todo: this is for single selected node
-        const items = Object.values(nodesMap)
-          .filter((node) => node.id !== nodeID)
-          .map((node) => {
-            return {
-              minX: node.position.x,
-              minY: node.position.y,
-              maxX: node.position.x + node.dimension.width,
-              maxY: node.position.y + node.dimension.height,
-              node: node,
-            };
-          });
-
-        rTree.clear();
-        rTree.load(items);
-        // todo
-
-        startCoordsRef.current = { x: e.clientX, y: e.clientY };
-        resetSelectedNodesMap();
-        setMouseState("moving-node");
-        setSelectedNodesMap({ [nodeID]: node_ });
-
-        return;
-      } else {
-        resetSelectedNodesMap();
-      }
-
-      setMouseState("panning");
-      startCoordsRef.current = {
-        x: e.clientX - panOffsetCoords.x,
-        y: e.clientY - panOffsetCoords.y,
-      };
-    },
-    [
-      panOffsetCoords,
-      nodesMap,
-      setMouseState,
-      setSelectedNodesMap,
-      resetSelectedNodesMap,
-      rTree,
-    ]
-  );
-
-  // idea
-  const prevBBoxRef = useRef();
-  // change
   const handleMouseMove = useCallback(
     (e) => {
       const wrapper = whiteboardWrapperRef.current;
       if (!wrapper) return;
 
-      // REVIEW:
-      if (mouseState === "dragging-edge") {
-        // debug
-        console.log("setting up new edge");
+      if (mouseState === "node_move") {
+        const BOUNDARY = 500;
 
-        const coords = getWhiteboardCoords(
-          e,
-          panOffsetCoords,
-          scale,
-          wrapperRect
-        );
-        setNewEdgeTargetCoords(coords);
+        // make it move by 1px
+        const diffX = Math.floor((e.clientX - startXY.x) / scale / 1) * 1;
+        const diffY = Math.floor((e.clientY - startXY.y) / scale / 1) * 1;
 
-        return;
-      }
+        // select a single node for diff + gap calc
+        const node = Object.values(selectedNodesMap)[0];
 
-      if (mouseState === "moving-node") {
-        const diffX = (e.clientX - startCoordsRef.current.x) / scale;
-        const diffY = (e.clientY - startCoordsRef.current.y) / scale;
+        const searchBox = {
+          minX: node.position.x + diffX - BOUNDARY,
+          minY: node.position.y + diffY - BOUNDARY,
+          maxX: node.position.x + diffX + node.dimension.width + BOUNDARY,
+          maxY: node.position.y + diffY + node.dimension.height + BOUNDARY,
+          node: node,
+        };
 
+        // supply box, create new tree, insert box, and set searchBoxesTree
+        set_searchBoxesTree(searchBox);
+
+        // actual search for nearby nodes
+        const nearbyNodes = nodesTree
+          .search(searchBox)
+          .filter((item) => item.node.id !== node.id);
+
+        const baseNode = {
+          dimension: node.dimension,
+          position: {
+            x: node.position.x + diffX,
+            y: node.position.y + diffY,
+          },
+        };
+
+        // gap will always be an integer
+        // because x and y of a node will always be an integer
+        let gapX = 0;
+        let gapY = 0;
+
+        const alignments = getAllAlignments(baseNode, nearbyNodes, 5);
+
+        if (alignments.vertical.length) {
+          gapX = alignments.vertical[0].gap;
+          setVerticalLines(alignments.vertical);
+        } else {
+          setVerticalLines([]);
+        }
+
+        if (alignments.horizontal.length) {
+          gapY = alignments.horizontal[0].gap;
+          setHorizontalLines(alignments.horizontal);
+        } else {
+          setHorizontalLines([]);
+        }
+
+        // loop through and update the x, y of each selected node
         Object.keys(selectedNodesMap).forEach((nodeID) => {
-          const node = selectedNodesMap[nodeID];
-
-          // todo
-          const BOUNDARY = 500;
-
-          // for visual
-          if (prevBBoxRef.current) rTree.remove(prevBBoxRef.current);
-          // for visual
-
-          const bbox = {
-            minX: node.position.x + diffX - BOUNDARY,
-            minY: node.position.y + diffY - BOUNDARY,
-            maxX: node.position.x + diffX + node.dimension.width + BOUNDARY,
-            maxY: node.position.y + diffY + node.dimension.height + BOUNDARY,
-            node: node,
-          };
-          prevBBoxRef.current = bbox;
-
-          // for visual
-          rTree.insert(bbox);
-
-          const nearbyNodes = rTree
-            .search(bbox)
-            .filter((item) => item.node.id !== node.id);
-
-          const baseNode = {
-            dimension: node.dimension,
-            position: {
-              x: node.position.x + diffX,
-              y: node.position.y + diffY,
-            },
-          };
-
-          let gapX = 0;
-          let gapY = 0;
-
-          const alignments = getAllAlignments(baseNode, nearbyNodes, 5);
-          if (alignments.vertical.length) {
-            gapX = alignments.vertical[0].gap;
-            setVerticalLines(alignments.vertical);
-          } else {
-            setVerticalLines([]);
-          }
-          if (alignments.horizontal.length) {
-            gapY = alignments.horizontal[0].gap;
-            setHorizontalLines(alignments.horizontal);
-          } else {
-            setHorizontalLines([]);
-          }
-
-          updateNode(nodeID, {
+          set_node(nodeID, {
             ...node,
             position: {
               x: node.position.x + diffX + gapX,
               y: node.position.y + diffY + gapY,
             },
           });
-          // todo
         });
 
         return;
       }
 
-      if (mouseState === "panning") {
-        setPanOffsetCoords({
-          x: e.clientX - startCoordsRef.current.x,
-          y: e.clientY - startCoordsRef.current.y,
-        });
+      if (mouseState === "edge_create") {
+        document.body.style.userSelect = "none";
+        const BOUNDARY = 20;
 
-        return;
+        const mouseXY = getWhiteboardCoords(e, panOffsetXY, scale, wrapperRect);
+
+        const searchBox = {
+          minX: mouseXY.x - BOUNDARY,
+          minY: mouseXY.y - BOUNDARY,
+          maxX: mouseXY.x + BOUNDARY,
+          maxY: mouseXY.y + BOUNDARY,
+        };
+
+        set_searchBoxesTree(searchBox);
+
+        const result = nodesTree.search(searchBox);
+
+        if (result.length > 0) {
+          const { node } = result[0];
+          const { position, dimension } = node;
+          const { x, y } = position;
+          const { width, height } = dimension;
+
+          const coords = {
+            top: { x: mouseXY.x, y },
+            right: { x: x + width, y: mouseXY.y },
+            bottom: { x: mouseXY.x, y: y + height },
+            left: { x, y: mouseXY.y },
+          };
+
+          const side = getClosestSide(node, mouseXY);
+
+          set_newEdge({ targetXY: coords[side] });
+        } else {
+          set_newEdge({ targetXY: mouseXY });
+        }
       }
     },
     [
       mouseState,
+      nodesTree,
+      startXY,
       selectedNodesMap,
+      wrapperRect,
+      panOffsetXY,
       scale,
-      setPanOffsetCoords,
-      updateNode,
-      rTree,
+      set_node,
       setVerticalLines,
       setHorizontalLines,
-      panOffsetCoords,
-      setNewEdgeTargetCoords,
-      wrapperRect,
+      set_searchBoxesTree,
+      set_newEdge,
     ]
   );
 
   // reset
   const handleMouseUp = useCallback(() => {
-    setMouseState(null);
+    set_mouseState(null);
     setVerticalLines([]);
     setHorizontalLines([]);
-    startCoordsRef.current = {
-      x: 0,
-      y: 0,
-    };
-  }, [setMouseState, setVerticalLines, setHorizontalLines]);
+  }, [set_mouseState, setVerticalLines, setHorizontalLines]);
 
   const handleWheel = useCallback(
     (e) => {
@@ -239,21 +247,21 @@ const App = () => {
 
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        const startPosX = (mouseX - panOffsetCoords.x) / scale;
-        const startPosY = (mouseY - panOffsetCoords.y) / scale;
+        const startPosX = (mouseX - panOffsetXY.x) / scale;
+        const startPosY = (mouseY - panOffsetXY.y) / scale;
         const newPanX = mouseX - startPosX * newScale;
         const newPanY = mouseY - startPosY * newScale;
 
-        setScale(newScale);
-        setPanOffsetCoords({ x: newPanX, y: newPanY });
+        set_scale(newScale);
+        set_panOffsetXY({ x: newPanX, y: newPanY });
       } else {
-        setPanOffsetCoords({
-          x: panOffsetCoords.x - e.deltaX,
-          y: panOffsetCoords.y - e.deltaY,
+        set_panOffsetXY({
+          x: panOffsetXY.x - e.deltaX,
+          y: panOffsetXY.y - e.deltaY,
         });
       }
     },
-    [panOffsetCoords, scale, setScale, setPanOffsetCoords]
+    [panOffsetXY, scale, set_scale, set_panOffsetXY]
   );
 
   // set up event handlers
@@ -281,19 +289,33 @@ const App = () => {
       const { x, y } = entries[0].target.getBoundingClientRect();
       const rect = { x, y, width, height };
 
-      setWrapperRect(rect);
+      set_wrapperRect(rect);
     });
 
     observer.observe(container);
 
     return () => observer.disconnect();
-  }, [setWrapperRect]);
+  }, [set_wrapperRect]);
 
   return (
     <main className="page">
-      <button onClick={() => console.log("rTree", rTree.toJSON())}>
-        Click
-      </button>
+      <div className="toolbar">
+        <button onClick={() => console.log("nodesTree", nodesTree.toJSON())}>
+          Nodes Tree
+        </button>
+
+        <button onClick={() => console.log("rTree")}>Edges Tree</button>
+
+        <button onClick={() => console.log("rTree")}>Connectors Tree</button>
+
+        <button
+          onClick={() =>
+            console.log("searchBoxesTree", searchBoxesTree.toJSON())
+          }
+        >
+          Search Boxes Tree
+        </button>
+      </div>
 
       <div
         className="whiteboard-wrapper"
@@ -303,7 +325,7 @@ const App = () => {
         <div
           className="whiteboard"
           style={{
-            transform: `translate(${panOffsetCoords.x}px, ${panOffsetCoords.y}px) scale(${scale})`,
+            transform: `translate(${panOffsetXY.x}px, ${panOffsetXY.y}px) scale(${scale})`,
             transformOrigin: "0 0",
           }}
         >
@@ -319,12 +341,18 @@ const App = () => {
             })}
           </div>
 
-          {newEdgeStartCoords && <NewEdge />}
+          {mouseState === "edge_create" && <NewEdge />}
 
           {/* review */}
         </div>
 
-        {wrapperRect && <Canvas />}
+        {wrapperRect && (
+          <>
+            <AlignmentLines />
+            <NodesTree />
+            <SearchBoxesTree />
+          </>
+        )}
       </div>
     </main>
   );

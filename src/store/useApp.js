@@ -6,7 +6,34 @@ import initEdgesMap from "../data/initEdgesMap";
 
 const useApp = create((set) => ({
   mouseState: null,
-  setMouseState: (mouseState) => set((state) => ({ ...state, mouseState })),
+  set_mouseState: (mouseState) => set((state) => ({ ...state, mouseState })),
+
+  nodesMap: initNodesMap,
+  set_node: (nodeID, node) =>
+    set((state) => ({
+      nodesMap: {
+        ...state.nodesMap,
+        [nodeID]: node,
+      },
+    })),
+
+  // selection_node
+  selectedNodesMap: {},
+  set_selectedNodesMap: (obj) => set(() => ({ selectedNodesMap: { ...obj } })),
+  reset_selectedNodesMap: () => set(() => ({ selectedNodesMap: {} })),
+
+  // wrapperRect
+  wrapperRect: null,
+  set_wrapperRect: (wrapperRect) => set(() => ({ wrapperRect })),
+
+  // panning
+  scale: 1,
+  set_scale: (value) =>
+    set((state) => ({ ...state, scale: parseFloat(value.toFixed(2)) })),
+  panOffsetXY: { x: 0, y: 0 },
+  set_panOffsetXY: (panOffsetXY) => set((state) => ({ ...state, panOffsetXY })),
+
+  // <------- cut ------->
 
   edgesMap: initEdgesMap,
   updateEdge: (edgeID, updatedEdge) =>
@@ -16,62 +43,33 @@ const useApp = create((set) => ({
         [edgeID]: updatedEdge,
       },
     })),
-  newEdgeStartCoords: null,
-  newEdgeStartLocation: null,
-  newEdgeTargetCoords: null,
-  setNewEdgeStartCoords: (coords) =>
-    set((state) => ({ ...state, newEdgeStartCoords: coords })),
-  setNewEdgeStartLocation: (loc) =>
-    set((state) => ({ ...state, newEdgeStartLocation: loc })),
-  setNewEdgeTargetCoords: (coords) =>
-    set((state) => ({ ...state, newEdgeTargetCoords: coords })),
 
-  nodesMap: initNodesMap,
-  updateNode: (nodeID, updatedNode) =>
-    set((state) => ({
-      nodesMap: {
-        ...state.nodesMap,
-        [nodeID]: updatedNode,
-      },
-    })),
+  // newEdge
+  newEdgeStartXY: null,
+  newEdgeStartLoc: null,
+  newEdgeTargetXY: null,
+  overlappedNode: null,
+  newEdgeSnap: null,
+  set_newEdgeSnap: (coords) =>
+    set((state) => ({ ...state, newEdgeSnapXY: coords })),
+
+  setNewEdgeStartXY: (coords) =>
+    set((state) => ({ ...state, newEdgeStartXY: coords })),
+  setNewEdgeStartLoc: (loc) =>
+    set((state) => ({ ...state, newEdgeStartLoc: loc })),
+  setNewEdgeTargetXY: (coords) =>
+    set((state) => ({ ...state, newEdgeTargetXY: coords })),
+
+  setOverlappedNode: (node) =>
+    set((state) => ({ ...state, overlappedNode: node })),
 
   // tree
-  // mutated, never set stated
-  rTree: new RBush(),
   verticalLines: [],
   horizontalLines: [],
   setVerticalLines: (lines) =>
     set((state) => ({ ...state, verticalLines: lines })),
   setHorizontalLines: (lines) =>
     set((state) => ({ ...state, horizontalLines: lines })),
-
-  // selection_node
-  selectedNodesMap: {},
-  setSelectedNodesMap: (obj) =>
-    set((state) => ({
-      ...state,
-      selectedNodesMap: { ...state.selectedNodesMap, ...obj },
-    })),
-  resetSelectedNodesMap: () =>
-    set((state) => ({ ...state, selectedNodesMap: {} })),
-
-  // wrapperRect
-  wrapperRect: null,
-  setWrapperRect: (rect) =>
-    set((state) => ({
-      ...state,
-      wrapperRect: rect,
-    })),
-
-  // panning
-  scale: 1,
-  setScale: (value) => set((state) => ({ ...state, scale: value })),
-  startCoords: { x: 0, y: 0 },
-  setStartCoords: (coords) =>
-    set((state) => ({ ...state, startCoords: coords })),
-  panOffsetCoords: { x: 0, y: 0 },
-  setPanOffsetCoords: (panOffsetCoords) =>
-    set((state) => ({ ...state, panOffsetCoords })),
 }));
 
 export default useApp;

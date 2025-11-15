@@ -1,12 +1,38 @@
 import { getNodeCoords } from "./getNodeCoords";
 
+const getKey = (map) => {
+  const entries = Object.entries(map);
+
+  if (entries.length === 0) return null;
+
+  let count = 0;
+  let qualifyingKeys = [];
+
+  entries.forEach((entry) => {
+    const gap = parseFloat(entry[0]);
+    const length = entry[1].length;
+
+    if (length > count) {
+      qualifyingKeys = [];
+      count = length;
+    }
+
+    if (length === count) {
+      qualifyingKeys.push(gap);
+    }
+  });
+
+  return Math.max(...qualifyingKeys);
+};
+
 export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
-  let horizontal = [];
-  let vertical = [];
+  let horizontalMap = {};
+  let verticalMap = {};
 
   const { x: bXs, y: bYs } = getNodeCoords(baseNode);
 
-  let s_gap = threshold;
+  let s_x_gap = threshold;
+  let s_y_gap = threshold;
 
   nearbyNodes.forEach((item) => {
     const nearbyNode = item.node;
@@ -18,15 +44,16 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
         const start = Math.min(...yCoords) - 10;
         const end = Math.max(...yCoords) + 10;
 
-        const gap = Math.abs(b_x - n_x);
+        const gap = n_x - b_x;
+        const absGap = Math.abs(b_x - n_x);
 
-        if (gap <= 5) {
-          if (gap < s_gap) {
-            vertical = [];
-            s_gap = gap;
+        if (absGap <= 5) {
+          if (absGap < s_x_gap) {
+            verticalMap = {};
+            s_x_gap = absGap;
           }
 
-          if (gap === s_gap) {
+          if (absGap === s_x_gap) {
             const data = {
               gap: n_x - b_x,
               currCoord: b_x,
@@ -37,7 +64,11 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
               lineEnd: [n_x, end],
             };
 
-            vertical.push(data);
+            if (verticalMap[gap]) {
+              verticalMap[gap].push(data);
+            } else {
+              verticalMap[gap] = [data];
+            }
           }
         }
       });
@@ -49,15 +80,16 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
         const start = Math.min(...xCoords) - 10;
         const end = Math.max(...xCoords) + 10;
 
-        const gap = Math.abs(b_y - n_y);
+        const gap = n_y - b_y;
+        const absGap = Math.abs(b_y - n_y);
 
-        if (gap <= 5) {
-          if (gap < s_gap) {
-            horizontal = [];
-            s_gap = gap;
+        if (absGap <= 5) {
+          if (absGap < s_y_gap) {
+            horizontalMap = {};
+            s_y_gap = absGap;
           }
 
-          if (gap === s_gap) {
+          if (absGap === s_y_gap) {
             const data = {
               gap: n_y - b_y,
               currCoord: b_y,
@@ -68,12 +100,25 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
               lineEnd: [end, n_y],
             };
 
-            horizontal.push(data);
+            if (horizontalMap[gap]) {
+              horizontalMap[gap].push(data);
+            } else {
+              horizontalMap[gap] = [data];
+            }
           }
         }
       });
     });
   });
 
-  return { horizontal, vertical };
+  const horizontalKey = getKey(horizontalMap);
+  const verticalKey = getKey(verticalMap);
+
+  const horizontal = horizontalKey === null ? [] : horizontalMap[horizontalKey];
+  const vertical = verticalKey === null ? [] : verticalMap[verticalKey];
+
+  return {
+    horizontal,
+    vertical,
+  };
 };

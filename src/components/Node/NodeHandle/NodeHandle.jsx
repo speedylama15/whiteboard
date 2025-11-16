@@ -12,15 +12,15 @@ const NodeHandle = memo(({ node, handleLocation }) => {
   const handleCoords = getHandleCoords(node, handleLocation);
 
   const set_mouseState = useApp((state) => state.set_mouseState);
-  const set_newEdge = useEdge((state) => state.set_newEdge);
   const set_nodesTree = useTree((state) => state.set_nodesTree);
+  const set_edgeData = useEdge((state) => state.set_edgeData);
 
   const handleMouseDown = (e) => {
     e.stopPropagation();
 
     set_nodesTree([node.id]);
     set_mouseState("edge_create");
-    set_newEdge({
+    set_edgeData({
       id: `edge-${Math.random()}`,
       sourceID: node.id,
       sourceLoc: handleLocation,

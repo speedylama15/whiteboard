@@ -1,8 +1,6 @@
 import { create } from "zustand";
-import RBush from "rbush";
 
 import initNodesMap from "../data/initNodesMap";
-import initEdgesMap from "../data/initEdgesMap";
 
 const useApp = create((set) => ({
   mouseState: null,
@@ -34,34 +32,6 @@ const useApp = create((set) => ({
   set_panOffsetXY: (panOffsetXY) => set((state) => ({ ...state, panOffsetXY })),
 
   // <------- cut ------->
-
-  edgesMap: initEdgesMap,
-  updateEdge: (edgeID, updatedEdge) =>
-    set((state) => ({
-      edgesMap: {
-        ...state.edgesMap,
-        [edgeID]: updatedEdge,
-      },
-    })),
-
-  // newEdge
-  newEdgeStartXY: null,
-  newEdgeStartLoc: null,
-  newEdgeTargetXY: null,
-  overlappedNode: null,
-  newEdgeSnap: null,
-  set_newEdgeSnap: (coords) =>
-    set((state) => ({ ...state, newEdgeSnapXY: coords })),
-
-  setNewEdgeStartXY: (coords) =>
-    set((state) => ({ ...state, newEdgeStartXY: coords })),
-  setNewEdgeStartLoc: (loc) =>
-    set((state) => ({ ...state, newEdgeStartLoc: loc })),
-  setNewEdgeTargetXY: (coords) =>
-    set((state) => ({ ...state, newEdgeTargetXY: coords })),
-
-  setOverlappedNode: (node) =>
-    set((state) => ({ ...state, overlappedNode: node })),
 
   // tree
   verticalLines: [],

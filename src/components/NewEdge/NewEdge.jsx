@@ -1,31 +1,53 @@
 import useApp from "../../store/useApp";
 import useEdge from "../../store/useEdge";
 
-import { getControlPoint } from "../../utils/getControlPoint";
 import { getHandleCoords } from "../../utils/getHandleCoords";
+import { getControlPoint } from "../../utils/getControlPoint";
 
 import "./NewEdge.css";
 
+// todo: make this more pleasing to look at later
+// start coord and mouse coord
+// const getStartControlPoint = (coords, location, mouseCoords) => {
+//   switch (location) {
+//     case "top":
+//       return { x: coords.x, y: coords.y - mouseCoords.y };
+//     case "bottom":
+//       return { x: coords.x, y: coords.y + mouseCoords.y };
+//     case "left":
+//       return { x: coords.x - mouseCoords.x, y: coords.y };
+//     case "right":
+//       return { x: coords.x + mouseCoords.x, y: coords.y };
+//     default:
+//       return { x: coords.x, y: coords.y };
+//   }
+// };
+
 const NewEdge = () => {
-  const nodesMap = useApp((state) => state.nodesMap);
+  const {
+    // id,
+    // offset,
+    sourceID,
+    sourceLoc,
+    targetID,
+    targetLoc,
+    targetXY,
+  } = useEdge((state) => state.edgeData);
 
-  const newEdge = useEdge((state) => state.newEdge);
-  const { sourceID, targetID, sourceLoc, targetLoc, targetXY } = newEdge;
-
-  const sourceNode = useApp((state) => state.nodesMap[sourceID]);
-  const sourceXY = getHandleCoords(sourceNode, sourceLoc);
-  const sourceControl = getControlPoint(sourceXY, sourceLoc, 150);
+  const sNode = useApp((state) => state.nodesMap[sourceID]);
+  const sCoord = getHandleCoords(sNode, sourceLoc);
+  // const sControl = getStartControlPoint(sCoord, sourceLoc, targetXY);
+  const sControl = getControlPoint(sCoord, sourceLoc, 150);
 
   let pathData = null;
 
   if (targetID) {
-    const targetNode = nodesMap[targetID];
-    const targetXY = getHandleCoords(targetNode, targetLoc);
-    const targetControl = getControlPoint(targetXY, targetLoc, 150);
+    // coords is already there. Calculate the control using targetXY
+    const tControl = getControlPoint(targetXY, targetLoc, 150);
 
-    pathData = `M ${sourceXY.x},${sourceXY.y} C ${sourceControl.x}, ${sourceControl.y} ${targetControl.x}, ${targetControl.y}, ${targetXY.x}, ${targetXY.y}`;
+    pathData = `M ${sCoord.x} ${sCoord.y} C ${sControl.x} ${sControl.y} ${tControl.x} ${tControl.y} ${targetXY.x} ${targetXY.y}`;
   } else {
-    pathData = `M ${sourceXY.x},${sourceXY.y} C ${sourceControl.x}, ${sourceControl.y} ${targetXY.x}, ${targetXY.y}, ${targetXY.x}, ${targetXY.y}`;
+    pathData = `M ${sCoord.x} ${sCoord.y} Q ${sControl.x} ${sControl.y} ${targetXY.x} ${targetXY.y}`;
   }
 
   return (

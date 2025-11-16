@@ -18,6 +18,7 @@ import { getAllAlignments } from "./utils/getAllAlignments";
 import "./App.css";
 import useEdge from "./store/useEdge";
 import { getWhiteboardCoords } from "./utils/getMouseCoords";
+import { getHandleCoords } from "./utils/getHandleCoords";
 
 function getClosestSide(node, point) {
   const { position, dimension } = node;
@@ -41,6 +42,44 @@ function getClosestSide(node, point) {
   } else {
     return px > 0 ? "right" : "left";
   }
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getSnapXY(node, side, mouseXY) {
+  const { x, y } = node.position;
+  const { width, height } = node.dimension;
+
+  const coords = {
+    top: { x: x + width / 2, y },
+    right: { x: x + width, y: y + height / 2 },
+    bottom: { x: x + width / 2, y: y + height },
+    left: { x, y: y + height / 2 },
+  };
+
+  const mouseAxis = side === "top" || side === "bottom" ? "x" : "y";
+  const otherAxis = mouseAxis === "x" ? "y" : "x";
+  const dimension = side === "top" || side === "bottom" ? "width" : "height";
+  const otherDimension =
+    side === "top" || side === "bottom" ? "height" : "width";
+
+  const centerCoord = coords[side][mouseAxis];
+  const mouseCoord = clamp(
+    mouseXY[mouseAxis],
+    node.position[mouseAxis],
+    node.position[mouseAxis] + node.dimension[dimension]
+  );
+
+  const gap = Math.abs(centerCoord - mouseCoord);
+  const addition =
+    side === "bottom" || side === "right" ? node.dimension[otherDimension] : 0;
+
+  return {
+    [mouseAxis]: gap <= 7 ? centerCoord : mouseCoord,
+    [otherAxis]: node.position[otherAxis] + addition,
+  };
 }
 
 const App = () => {
@@ -72,15 +111,17 @@ const App = () => {
 
   const startXY = useCoords((state) => state.startXY);
 
-  const set_newEdge = useEdge((state) => state.set_newEdge);
-  const reset_newEdge = useEdge((state) => state.reset_newEdge);
+  const edgesMap = useEdge((state) => state.edgesMap);
+  const set_edge = useEdge((state) => state.set_edge);
+
+  const edgeData = useEdge((state) => state.edgeData);
+  const set_edgeData = useEdge((state) => state.set_edgeData);
+  // const reset_edgeData = useEdge((state) => state.reset_edgeData);
 
   // <------- new ------->
 
   const setVerticalLines = useApp((state) => state.setVerticalLines);
   const setHorizontalLines = useApp((state) => state.setHorizontalLines);
-
-  const edgesMap = useApp((state) => state.edgesMap);
 
   // panning
   const scale = useApp((state) => state.scale);
@@ -175,7 +216,7 @@ const App = () => {
 
       if (mouseState === "edge_create") {
         document.body.style.userSelect = "none";
-        const BOUNDARY = 20;
+        const BOUNDARY = 10;
 
         const mouseXY = getWhiteboardCoords(e, panOffsetXY, scale, wrapperRect);
 
@@ -192,22 +233,17 @@ const App = () => {
 
         if (result.length > 0) {
           const { node } = result[0];
-          const { position, dimension } = node;
-          const { x, y } = position;
-          const { width, height } = dimension;
-
-          const coords = {
-            top: { x: mouseXY.x, y },
-            right: { x: x + width, y: mouseXY.y },
-            bottom: { x: mouseXY.x, y: y + height },
-            left: { x, y: mouseXY.y },
-          };
 
           const side = getClosestSide(node, mouseXY);
+          const snapXY = getSnapXY(node, side, mouseXY);
 
-          set_newEdge({ targetXY: coords[side] });
+          set_edgeData({
+            targetID: node.id,
+            targetLoc: side,
+            targetXY: snapXY,
+          });
         } else {
-          set_newEdge({ targetXY: mouseXY });
+          set_edgeData({ targetID: null, targetLoc: null, targetXY: mouseXY });
         }
       }
     },
@@ -223,16 +259,54 @@ const App = () => {
       setVerticalLines,
       setHorizontalLines,
       set_searchBoxesTree,
-      set_newEdge,
+      set_edgeData,
     ]
   );
 
   // reset
   const handleMouseUp = useCallback(() => {
+    if (mouseState === "edge_create") {
+      if (!edgeData.targetID) {
+        console.log(`show toolbar: node ${edgeData.sourceID}`);
+      } else {
+        // todo
+
+        const { id, sourceID, sourceLoc, targetID, targetLoc, targetXY } =
+          edgeData;
+
+        const axis = targetLoc === "top" || targetLoc === "bottom" ? "x" : "y";
+
+        const targetNode = nodesMap[targetID];
+        const offsetCoord = targetXY[axis];
+        const centerCoord = getHandleCoords(targetNode, targetLoc)[axis];
+
+        const offset = offsetCoord - centerCoord;
+
+        const newEdge = {
+          id,
+          sourceID,
+          targetID,
+          sourceLoc,
+          targetLoc,
+          offset,
+        };
+
+        set_edge(id, newEdge);
+      }
+    }
+
     set_mouseState(null);
     setVerticalLines([]);
     setHorizontalLines([]);
-  }, [set_mouseState, setVerticalLines, setHorizontalLines]);
+  }, [
+    nodesMap,
+    mouseState,
+    edgeData,
+    set_mouseState,
+    setVerticalLines,
+    setHorizontalLines,
+    set_edge,
+  ]);
 
   const handleWheel = useCallback(
     (e) => {

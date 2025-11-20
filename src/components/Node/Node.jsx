@@ -2,6 +2,7 @@ import { memo } from "react";
 
 import NodeHandle from "./NodeHandle/NodeHandle";
 import NodeConnector from "./NodeConnector/NodeConnector";
+import NodeRotator from "./NodeRotator/NodeRotator";
 
 import useApp from "../../store/useApp";
 import useTree from "../../store/useTree";
@@ -27,6 +28,8 @@ const Node = memo(({ nodeID }) => {
 
     set_nodesTree([nodeID]);
     set_startXY({ x: e.clientX, y: e.clientY });
+    // selected nodes map gets constantly updated when it's clicked and when it's clicked
+    // that is when operation begins
     set_selectedNodesMap({ [nodeID]: node });
     set_mouseState("node_move");
   };
@@ -44,30 +47,39 @@ const Node = memo(({ nodeID }) => {
       onMouseDown={handleMouseDown}
     >
       <div
-        className="node_text"
-        contentEditable={true}
-        suppressContentEditableWarning={true}
+        className="rotatable-node"
+        style={{
+          transform: `rotate(${node.rotation}rad)`,
+        }}
       >
-        {node.content.text}
+        <div
+          className="node_text"
+          contentEditable={true}
+          suppressContentEditableWarning={true}
+        >
+          {node.content.text}
+        </div>
+
+        {mouseState === "edge_create" && (
+          <>
+            <NodeConnector node={node} connectorLocation="top" />
+            <NodeConnector node={node} connectorLocation="right" />
+            <NodeConnector node={node} connectorLocation="bottom" />
+            <NodeConnector node={node} connectorLocation="left" />
+          </>
+        )}
+
+        {isSelected && (
+          <>
+            <NodeRotator node={node} />
+
+            <NodeHandle node={node} handleLocation={"top"} />
+            <NodeHandle node={node} handleLocation={"right"} />
+            <NodeHandle node={node} handleLocation={"bottom"} />
+            <NodeHandle node={node} handleLocation={"left"} />
+          </>
+        )}
       </div>
-
-      {mouseState === "edge_create" && (
-        <>
-          <NodeConnector node={node} connectorLocation="top" />
-          <NodeConnector node={node} connectorLocation="right" />
-          <NodeConnector node={node} connectorLocation="bottom" />
-          <NodeConnector node={node} connectorLocation="left" />
-        </>
-      )}
-
-      {isSelected && (
-        <>
-          <NodeHandle node={node} handleLocation={"top"} />
-          <NodeHandle node={node} handleLocation={"right"} />
-          <NodeHandle node={node} handleLocation={"bottom"} />
-          <NodeHandle node={node} handleLocation={"left"} />
-        </>
-      )}
     </div>
   );
 });

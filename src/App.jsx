@@ -12,37 +12,15 @@ import SearchBoxesTree from "./components/Tree/SearchBoxesTree/SearchBoxesTree";
 import useApp from "./store/useApp";
 import useTree from "./store/useTree";
 import useCoords from "./store/useCoords";
+import useEdge from "./store/useEdge";
 
 import { getAllAlignments } from "./utils/getAllAlignments";
-
-import "./App.css";
-import useEdge from "./store/useEdge";
 import { getWhiteboardCoords } from "./utils/getMouseCoords";
 import { getHandleCoords } from "./utils/getHandleCoords";
+import { getAngle } from "./utils/getAngle";
+import { getClosestSide } from "./utils/getClosestSide";
 
-function getClosestSide(node, point) {
-  const { position, dimension } = node;
-  const { x, y } = position;
-  const { width, height } = dimension;
-
-  const centerX = x + width / 2;
-  const centerY = y + height / 2;
-  const px = point.x - centerX;
-  const py = point.y - centerY;
-
-  const halfWidth = width / 2;
-  const halfHeight = height / 2;
-
-  if (px === 0) {
-    return py > 0 ? "bottom" : "top";
-  }
-
-  if (Math.abs(py / px) > halfHeight / halfWidth) {
-    return py > 0 ? "bottom" : "top";
-  } else {
-    return px > 0 ? "right" : "left";
-  }
-}
+import "./App.css";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -116,7 +94,6 @@ const App = () => {
 
   const edgeData = useEdge((state) => state.edgeData);
   const set_edgeData = useEdge((state) => state.set_edgeData);
-  // const reset_edgeData = useEdge((state) => state.reset_edgeData);
 
   // <------- new ------->
 
@@ -144,6 +121,34 @@ const App = () => {
     (e) => {
       const wrapper = whiteboardWrapperRef.current;
       if (!wrapper) return;
+
+      // debug
+      const node_id = Object.values(selectedNodesMap)[0]?.id;
+      if (!node_id) return;
+      const node = nodesMap[node_id];
+      const mouseXY = getWhiteboardCoords(e, panOffsetXY, scale, wrapperRect);
+      console.log("side", getClosestSide(node, mouseXY));
+      // debug
+
+      if (mouseState === "node_rotate") {
+        document.body.style.userSelect = "none";
+
+        const node = Object.values(selectedNodesMap)[0];
+        // selected node is used for getting node
+        const nodeID = node.id;
+        const nodeDOM = document.querySelector(`[data-node-id="${nodeID}"]`);
+
+        const currentAngle = getAngle(e, nodeDOM);
+
+        Object.keys(selectedNodesMap).forEach((nodeID) => {
+          set_node(nodeID, {
+            ...nodesMap[nodeID],
+            rotation: currentAngle,
+          });
+        });
+
+        return;
+      }
 
       if (mouseState === "node_move") {
         const BOUNDARY = 500;
@@ -188,6 +193,7 @@ const App = () => {
 
         if (alignments.vertical.length) {
           gapX = alignments.vertical[0].gap;
+
           setVerticalLines(alignments.vertical);
         } else {
           setVerticalLines([]);
@@ -203,7 +209,7 @@ const App = () => {
         // loop through and update the x, y of each selected node
         Object.keys(selectedNodesMap).forEach((nodeID) => {
           set_node(nodeID, {
-            ...node,
+            ...nodesMap[nodeID],
             position: {
               x: node.position.x + diffX + gapX,
               y: node.position.y + diffY + gapY,
@@ -260,6 +266,7 @@ const App = () => {
       setHorizontalLines,
       set_searchBoxesTree,
       set_edgeData,
+      nodesMap,
     ]
   );
 
@@ -267,10 +274,9 @@ const App = () => {
   const handleMouseUp = useCallback(() => {
     if (mouseState === "edge_create") {
       if (!edgeData.targetID) {
+        // todo
         console.log(`show toolbar: node ${edgeData.sourceID}`);
       } else {
-        // todo
-
         const { id, sourceID, sourceLoc, targetID, targetLoc, targetXY } =
           edgeData;
 
@@ -380,8 +386,6 @@ const App = () => {
 
         <button onClick={() => console.log("rTree")}>Edges Tree</button>
 
-        <button onClick={() => console.log("rTree")}>Connectors Tree</button>
-
         <button
           onClick={() =>
             console.log("searchBoxesTree", searchBoxesTree.toJSON())
@@ -410,6 +414,33 @@ const App = () => {
           </div>
 
           <div className="whiteboard-edges">
+            {/* fix */}
+            <svg className="react-flow__marker" aria-hidden="true">
+              <defs>
+                <marker
+                  className="react-flow__arrowhead"
+                  id="1__type=arrow"
+                  markerWidth="12.5"
+                  markerHeight="12.5"
+                  viewBox="-10 -10 20 20"
+                  markerUnits="strokeWidth"
+                  orient="auto-start-reverse"
+                  refX="0"
+                  refY="0"
+                >
+                  <polyline
+                    className="arrow"
+                    strokeLinecap="round"
+                    fill="none"
+                    strokeLinejoin="round"
+                    points="-5,-4 0,0 -5,4"
+                    style={{ strokeWidth: 2, stroke: "#000000ff" }}
+                  ></polyline>
+                </marker>
+              </defs>
+            </svg>
+            {/* fix */}
+
             {Object.keys(edgesMap).map((edgeID) => {
               return <Edge key={edgeID} edgeID={edgeID} />;
             })}

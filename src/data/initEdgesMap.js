@@ -13,7 +13,7 @@ const initEdgesMap = {
     targetID: "node-8",
     sourceLoc: "left",
     targetLoc: "right",
-    offset: 10,
+    offset: 0,
   },
 };
 

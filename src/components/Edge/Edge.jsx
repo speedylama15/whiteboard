@@ -35,7 +35,13 @@ const Edge = memo(({ edgeID }) => {
   return (
     <div className="edge">
       <svg>
-        <path d={pathData} stroke="#000000ff" fill="none" strokeWidth={2} />
+        <path
+          d={pathData}
+          stroke="#000000ff"
+          fill="none"
+          strokeWidth={2}
+          markerEnd="url(#1__type=arrow)"
+        />
       </svg>
     </div>
   );

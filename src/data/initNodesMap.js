@@ -4,6 +4,7 @@ const initNodesMap = {
     type: "basic",
     content: { type: "text", text: "☦️ 1" },
     position: { x: 100, y: 100 },
+    rotation: 1,
     dimension: { width: 200, height: 100 },
   },
   "node-2": {
@@ -11,6 +12,7 @@ const initNodesMap = {
     type: "basic",
     content: { type: "text", text: "✏️ 2" },
     position: { x: -500, y: 200 },
+    rotation: 1,
     dimension: { width: 150, height: 100 },
   },
   "node-3": {
@@ -18,6 +20,7 @@ const initNodesMap = {
     type: "basic",
     content: { type: "text", text: "🖐 3" },
     position: { x: -200, y: 700 },
+    rotation: 0,
     dimension: { width: 150, height: 100 },
   },
   "node-4": {
@@ -25,6 +28,7 @@ const initNodesMap = {
     type: "basic",
     content: { type: "text", text: "🎨 4" },
     position: { x: 400, y: 350 },
+    rotation: 0,
     dimension: { width: 180, height: 120 },
   },
   "node-5": {
@@ -32,6 +36,7 @@ const initNodesMap = {
     type: "basic",
     content: { type: "text", text: "🚀 5" },
     position: { x: -100, y: -150 },
+    rotation: 2,
     dimension: { width: 160, height: 110 },
   },
   "node-6": {
@@ -39,6 +44,7 @@ const initNodesMap = {
     type: "basic",
     content: { type: "text", text: "💡 6" },
     position: { x: 650, y: -50 },
+    rotation: 0,
     dimension: { width: 140, height: 90 },
   },
   "node-7": {
@@ -46,6 +52,7 @@ const initNodesMap = {
     type: "basic",
     content: { type: "text", text: "🌟 7" },
     position: { x: -400, y: 500 },
+    rotation: 0,
     dimension: { width: 170, height: 100 },
   },
   "node-8": {
@@ -53,6 +60,7 @@ const initNodesMap = {
     type: "basic",
     content: { type: "text", text: "🎯 8" },
     position: { x: 200, y: 600 },
+    rotation: 0,
     dimension: { width: 150, height: 95 },
   },
 };

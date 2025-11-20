@@ -55,9 +55,7 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
 
           if (absGap === s_x_gap) {
             const data = {
-              gap: n_x - b_x,
-              currCoord: b_x,
-              coordToSnap: n_x,
+              gap,
               baseNode,
               nearbyNode,
               lineStart: [n_x, start],
@@ -91,9 +89,7 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
 
           if (absGap === s_y_gap) {
             const data = {
-              gap: n_y - b_y,
-              currCoord: b_y,
-              coordToSnap: n_y,
+              gap,
               baseNode,
               nearbyNode,
               lineStart: [start, n_y],

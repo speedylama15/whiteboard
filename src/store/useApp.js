@@ -29,7 +29,14 @@ const useApp = create((set) => ({
   set_scale: (value) =>
     set((state) => ({ ...state, scale: parseFloat(value.toFixed(2)) })),
   panOffsetXY: { x: 0, y: 0 },
-  set_panOffsetXY: (panOffsetXY) => set((state) => ({ ...state, panOffsetXY })),
+  // idea: huh?
+  set_panOffsetXY: (panOffsetXY) =>
+    set((state) => ({
+      panOffsetXY:
+        typeof panOffsetXY === "function"
+          ? panOffsetXY(state.panOffsetXY)
+          : panOffsetXY,
+    })),
 
   // <------- cut ------->
 

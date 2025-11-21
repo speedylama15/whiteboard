@@ -6,7 +6,6 @@ import NodeRotator from "./NodeRotator/NodeRotator";
 
 import useApp from "../../store/useApp";
 import useTree from "../../store/useTree";
-import useCoords from "../../store/useCoords";
 
 import "./Node.css";
 
@@ -19,7 +18,6 @@ const Node = memo(({ nodeID }) => {
   const mouseState = useApp((state) => state.mouseState);
 
   const set_nodesTree = useTree((state) => state.set_nodesTree);
-  const set_startXY = useCoords((state) => state.set_startXY);
   const set_selectedNodesMap = useApp((state) => state.set_selectedNodesMap);
   const set_mouseState = useApp((state) => state.set_mouseState);
 
@@ -27,9 +25,10 @@ const Node = memo(({ nodeID }) => {
     e.stopPropagation();
 
     set_nodesTree([nodeID]);
-    set_startXY({ x: e.clientX, y: e.clientY });
-    // selected nodes map gets constantly updated when it's clicked and when it's clicked
-    // that is when operation begins
+    // review: when I rotate the node, the node inside of nodesMap gets updated
+    // review: but the selected node inside of selectedNodesMap remains the same
+    // review: therefore, when the rotator gets clicked again, I need to ensure
+    // review: that the updated version of the node gets selected again
     set_selectedNodesMap({ [nodeID]: node });
     set_mouseState("node_move");
   };

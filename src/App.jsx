@@ -11,7 +11,6 @@ import SearchBoxesTree from "./components/Tree/SearchBoxesTree/SearchBoxesTree";
 
 import useApp from "./store/useApp";
 import useTree from "./store/useTree";
-import useCoords from "./store/useCoords";
 import useEdge from "./store/useEdge";
 
 import { getAllAlignments } from "./utils/getAllAlignments";
@@ -19,6 +18,8 @@ import { getWhiteboardCoords } from "./utils/getMouseCoords";
 import { getHandleCoords } from "./utils/getHandleCoords";
 import { getAngle } from "./utils/getAngle";
 import { getClosestSide } from "./utils/getClosestSide";
+import { getPanValues } from "./utils/getPanValues";
+import { getRotatedVertices } from "./utils/rotating/getRotatedVertices";
 
 import "./App.css";
 
@@ -87,8 +88,6 @@ const App = () => {
   const wrapperRect = useApp((state) => state.wrapperRect);
   const set_wrapperRect = useApp((state) => state.set_wrapperRect);
 
-  const startXY = useCoords((state) => state.startXY);
-
   const edgesMap = useEdge((state) => state.edgesMap);
   const set_edge = useEdge((state) => state.set_edge);
 
@@ -108,6 +107,15 @@ const App = () => {
 
   // <------- ref ------->
   const whiteboardWrapperRef = useRef();
+
+  // review: for requestAnimationFrame
+  const frameIDRef = useRef(null);
+  const panVelocityRef = useRef({ x: 0, y: 0 });
+
+  // review: startXY will be registered in mouse move
+  // review: because scale may differ when mousedown and mousemove were invoked
+  const startXYRef = useRef(null);
+  const wrapperRectRef = useRef(null);
   // <------- ref ------->
 
   const handleMouseDown = useCallback(() => {
@@ -122,19 +130,10 @@ const App = () => {
       const wrapper = whiteboardWrapperRef.current;
       if (!wrapper) return;
 
-      // debug
-      const node_id = Object.values(selectedNodesMap)[0]?.id;
-      if (!node_id) return;
-      const node = nodesMap[node_id];
-      const mouseXY = getWhiteboardCoords(e, panOffsetXY, scale, wrapperRect);
-      console.log("side", getClosestSide(node, mouseXY));
-      // debug
-
       if (mouseState === "node_rotate") {
         document.body.style.userSelect = "none";
 
         const node = Object.values(selectedNodesMap)[0];
-        // selected node is used for getting node
         const nodeID = node.id;
         const nodeDOM = document.querySelector(`[data-node-id="${nodeID}"]`);
 
@@ -151,24 +150,45 @@ const App = () => {
       }
 
       if (mouseState === "node_move") {
-        const BOUNDARY = 500;
+        const SEARCH_BOUNDARY = 500;
+
+        const { x, y } = getWhiteboardCoords(
+          e,
+          panOffsetXY,
+          scale,
+          wrapperRect
+        );
+
+        if (startXYRef.current === null) {
+          startXYRef.current = { x, y };
+        }
+
+        if (wrapperRectRef.current === null) {
+          wrapperRectRef.current =
+            whiteboardWrapperRef.current.getBoundingClientRect();
+        }
+
+        // for panning
+        const { panX, panY } = getPanValues(e, wrapperRectRef.current);
+        panVelocityRef.current = { x: panX, y: panY };
 
         // make it move by 1px
-        const diffX = Math.floor((e.clientX - startXY.x) / scale / 1) * 1;
-        const diffY = Math.floor((e.clientY - startXY.y) / scale / 1) * 1;
+        const diffX = Math.floor(x - startXYRef.current.x) * 1;
+        const diffY = Math.floor(y - startXYRef.current.y) * 1;
 
         // select a single node for diff + gap calc
         const node = Object.values(selectedNodesMap)[0];
 
+        // supply box, create new tree, insert box, and set searchBoxesTree
+        const { minX, maxX, minY, maxY, width, height } =
+          getRotatedVertices(node);
         const searchBox = {
-          minX: node.position.x + diffX - BOUNDARY,
-          minY: node.position.y + diffY - BOUNDARY,
-          maxX: node.position.x + diffX + node.dimension.width + BOUNDARY,
-          maxY: node.position.y + diffY + node.dimension.height + BOUNDARY,
+          minX: minX + diffX - SEARCH_BOUNDARY,
+          minY: minY + diffY - SEARCH_BOUNDARY,
+          maxX: maxX + diffX + SEARCH_BOUNDARY,
+          maxY: maxY + diffY + SEARCH_BOUNDARY,
           node: node,
         };
-
-        // supply box, create new tree, insert box, and set searchBoxesTree
         set_searchBoxesTree(searchBox);
 
         // actual search for nearby nodes
@@ -177,10 +197,10 @@ const App = () => {
           .filter((item) => item.node.id !== node.id);
 
         const baseNode = {
-          dimension: node.dimension,
+          dimension: { width, height },
           position: {
-            x: node.position.x + diffX,
-            y: node.position.y + diffY,
+            x: minX + diffX,
+            y: minY + diffY,
           },
         };
 
@@ -204,6 +224,31 @@ const App = () => {
           setHorizontalLines(alignments.horizontal);
         } else {
           setHorizontalLines([]);
+        }
+
+        if (!frameIDRef.current && (panX !== 0 || panY !== 0)) {
+          // review: recursive
+          // review: defined ONCE
+          // review: let panX, panY are redefined each re-render
+          // review: therefore, animate() loses access to the original panX and panY
+          // review: that is why we have to use useRef because useRef persists and remains
+          const animate = () => {
+            const { x, y } = panVelocityRef.current;
+
+            if (x === 0 && y === 0) {
+              frameIDRef.current = null;
+              return;
+            }
+
+            set_panOffsetXY((prev) => ({
+              x: prev.x + x,
+              y: prev.y + y,
+            }));
+
+            frameIDRef.current = requestAnimationFrame(animate);
+          };
+
+          animate();
         }
 
         // loop through and update the x, y of each selected node
@@ -255,8 +300,8 @@ const App = () => {
     },
     [
       mouseState,
+      nodesMap,
       nodesTree,
-      startXY,
       selectedNodesMap,
       wrapperRect,
       panOffsetXY,
@@ -266,12 +311,19 @@ const App = () => {
       setHorizontalLines,
       set_searchBoxesTree,
       set_edgeData,
-      nodesMap,
+      set_panOffsetXY,
     ]
   );
 
   // reset
   const handleMouseUp = useCallback(() => {
+    if (frameIDRef.current) {
+      // review: make sure to cancel this
+      cancelAnimationFrame(frameIDRef.current);
+
+      frameIDRef.current = null;
+    }
+
     if (mouseState === "edge_create") {
       if (!edgeData.targetID) {
         // todo
@@ -300,6 +352,10 @@ const App = () => {
         set_edge(id, newEdge);
       }
     }
+
+    startXYRef.current = null;
+    wrapperRectRef.current = null;
+    panVelocityRef.current = { x: 0, y: 0 };
 
     set_mouseState(null);
     setVerticalLines([]);
@@ -335,10 +391,10 @@ const App = () => {
         set_scale(newScale);
         set_panOffsetXY({ x: newPanX, y: newPanY });
       } else {
-        set_panOffsetXY({
-          x: panOffsetXY.x - e.deltaX,
-          y: panOffsetXY.y - e.deltaY,
-        });
+        set_panOffsetXY((prev) => ({
+          x: prev.x - e.deltaX,
+          y: prev.y - e.deltaY,
+        }));
       }
     },
     [panOffsetXY, scale, set_scale, set_panOffsetXY]

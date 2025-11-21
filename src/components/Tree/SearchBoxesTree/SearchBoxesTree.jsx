@@ -35,7 +35,7 @@ const SearchBoxesTree = () => {
     ctx.lineWidth = 3;
 
     searchBoxesTree.all().forEach((item) => {
-      ctx.strokeStyle = "#ff004053";
+      ctx.strokeStyle = "#ff6200";
       ctx.strokeRect(
         item.minX,
         item.minY,

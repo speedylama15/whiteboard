@@ -1,46 +1,51 @@
-import { getNodeCoords } from "./getNodeCoords";
+const getLines = (map) => {
+  const keys = Object.keys(map);
 
-const getKey = (map) => {
-  const entries = Object.entries(map);
+  if (keys.length > 2 || keys.length === 0) {
+    return [];
+  }
 
-  if (entries.length === 0) return null;
+  return map[keys[0]];
+};
 
-  let count = 0;
-  let qualifyingKeys = [];
+const getBoxEdgesCoords = (node) => {
+  const { id, position, dimension } = node;
 
-  entries.forEach((entry) => {
-    const gap = parseFloat(entry[0]);
-    const length = entry[1].length;
+  const { x, y } = position;
+  const { width, height } = dimension;
 
-    if (length > count) {
-      qualifyingKeys = [];
-      count = length;
-    }
-
-    if (length === count) {
-      qualifyingKeys.push(gap);
-    }
-  });
-
-  return Math.max(...qualifyingKeys);
+  return {
+    id: id,
+    x: [x, Number((x + width / 2).toFixed(2)), Number((x + width).toFixed(2))],
+    y: [
+      y,
+      Number((y + height / 2).toFixed(2)),
+      Number((y + height).toFixed(2)),
+    ],
+  };
 };
 
 export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
   let horizontalMap = {};
   let verticalMap = {};
 
-  const { x: bXs, y: bYs } = getNodeCoords(baseNode);
+  const { x: baseXs, y: baseYs } = getBoxEdgesCoords(baseNode);
 
-  let s_x_gap = threshold;
-  let s_y_gap = threshold;
+  let smallestXGap = threshold;
+  let smallestYGap = threshold;
 
   nearbyNodes.forEach((item) => {
-    const nearbyNode = item.node;
-    const { x: nXs, y: nYs } = getNodeCoords(nearbyNode);
+    const nearbyNode = {
+      id: item.node.id,
+      position: { x: item.minX, y: item.minY },
+      dimension: { width: item.width, height: item.height },
+    };
 
-    nXs.forEach((n_x) => {
-      bXs.forEach((b_x) => {
-        const yCoords = [...nYs, ...bYs];
+    const { x: nearbyXs, y: nearbyYs } = getBoxEdgesCoords(nearbyNode);
+
+    nearbyXs.forEach((n_x) => {
+      baseXs.forEach((b_x) => {
+        const yCoords = [...nearbyYs, ...baseYs];
         const start = Math.min(...yCoords) - 10;
         const end = Math.max(...yCoords) + 10;
 
@@ -48,16 +53,18 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
         const absGap = Math.abs(b_x - n_x);
 
         if (absGap <= 5) {
-          if (absGap < s_x_gap) {
+          if (absGap < smallestXGap) {
             verticalMap = {};
-            s_x_gap = absGap;
+            smallestXGap = absGap;
           }
 
-          if (absGap === s_x_gap) {
+          if (absGap === smallestXGap) {
             const data = {
+              type: "axis",
               gap,
               baseNode,
               nearbyNode,
+              // idea: change this later
               lineStart: [n_x, start],
               lineEnd: [n_x, end],
             };
@@ -72,9 +79,9 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
       });
     });
 
-    nYs.forEach((n_y) => {
-      bYs.forEach((b_y) => {
-        const xCoords = [...nXs, ...bXs];
+    nearbyYs.forEach((n_y) => {
+      baseYs.forEach((b_y) => {
+        const xCoords = [...nearbyXs, ...baseXs];
         const start = Math.min(...xCoords) - 10;
         const end = Math.max(...xCoords) + 10;
 
@@ -82,16 +89,18 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
         const absGap = Math.abs(b_y - n_y);
 
         if (absGap <= 5) {
-          if (absGap < s_y_gap) {
+          if (absGap < smallestYGap) {
             horizontalMap = {};
-            s_y_gap = absGap;
+            smallestYGap = absGap;
           }
 
-          if (absGap === s_y_gap) {
+          if (absGap === smallestYGap) {
             const data = {
+              type: "axis",
               gap,
               baseNode,
               nearbyNode,
+              // idea: change this later
               lineStart: [start, n_y],
               lineEnd: [end, n_y],
             };
@@ -107,14 +116,12 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
     });
   });
 
-  const horizontalKey = getKey(horizontalMap);
-  const verticalKey = getKey(verticalMap);
-
-  const horizontal = horizontalKey === null ? [] : horizontalMap[horizontalKey];
-  const vertical = verticalKey === null ? [] : verticalMap[verticalKey];
+  // idea: change this
+  const horizontalLines = getLines(horizontalMap);
+  const verticalLines = getLines(verticalMap);
 
   return {
-    horizontal,
-    vertical,
+    horizontal: horizontalLines,
+    vertical: verticalLines,
   };
 };

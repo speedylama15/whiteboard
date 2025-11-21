@@ -31,10 +31,10 @@ const NodesTree = () => {
     ctx.scale(dpr, dpr);
     ctx.translate(panOffsetXY.x, panOffsetXY.y);
     ctx.scale(scale, scale);
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
 
     nodesTree.all().forEach((item) => {
-      ctx.strokeStyle = "#ff7b00ff";
+      ctx.strokeStyle = "#130ff9ff";
       ctx.strokeRect(
         item.minX,
         item.minY,

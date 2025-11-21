@@ -3,6 +3,8 @@ import RBush from "rbush";
 
 import useApp from "./useApp";
 
+import { getRotatedVertices } from "../utils/rotating/getRotatedVertices";
+
 const useTree = create((set, get) => {
   return {
     nodesTree: new RBush(),
@@ -13,13 +15,20 @@ const useTree = create((set, get) => {
         const newMap = { ...map };
         nodeIDs.forEach((id) => delete newMap[id]);
 
-        const boxes = Object.values(newMap).map((node) => ({
-          node,
-          minX: node.position.x,
-          minY: node.position.y,
-          maxX: node.position.x + node.dimension.width,
-          maxY: node.position.y + node.dimension.height,
-        }));
+        const boxes = Object.values(newMap).map((node) => {
+          const { minX, maxX, minY, maxY, width, height } =
+            getRotatedVertices(node);
+
+          return {
+            node,
+            minX,
+            minY,
+            maxX,
+            maxY,
+            width,
+            height,
+          };
+        });
 
         tree.load(boxes);
 

@@ -43,9 +43,9 @@ const useApp = create((set) => ({
   // tree
   verticalLines: [],
   horizontalLines: [],
-  setVerticalLines: (lines) =>
+  set_verticalLines: (lines) =>
     set((state) => ({ ...state, verticalLines: lines })),
-  setHorizontalLines: (lines) =>
+  set_horizontalLines: (lines) =>
     set((state) => ({ ...state, horizontalLines: lines })),
 }));
 

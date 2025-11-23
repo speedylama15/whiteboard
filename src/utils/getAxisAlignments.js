@@ -25,7 +25,7 @@ const getBoxEdgesCoords = (node) => {
   };
 };
 
-export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
+export const getAxisAlignments = (baseNode, nearbyNodes, threshold = 5) => {
   let horizontalMap = {};
   let verticalMap = {};
 
@@ -64,9 +64,8 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
               gap,
               baseNode,
               nearbyNode,
-              // idea: change this later
-              lineStart: [n_x, start],
-              lineEnd: [n_x, end],
+              lineStart: { x: n_x, y: start },
+              lineEnd: { x: n_x, y: end },
             };
 
             if (verticalMap[gap]) {
@@ -100,9 +99,8 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
               gap,
               baseNode,
               nearbyNode,
-              // idea: change this later
-              lineStart: [start, n_y],
-              lineEnd: [end, n_y],
+              lineStart: { x: start, y: n_y },
+              lineEnd: { x: end, y: n_y },
             };
 
             if (horizontalMap[gap]) {
@@ -116,12 +114,8 @@ export const getAllAlignments = (baseNode, nearbyNodes, threshold = 5) => {
     });
   });
 
-  // idea: change this
-  const horizontalLines = getLines(horizontalMap);
-  const verticalLines = getLines(verticalMap);
-
   return {
-    horizontal: horizontalLines,
-    vertical: verticalLines,
+    horizontalLines: getLines(horizontalMap),
+    verticalLines: getLines(verticalMap),
   };
 };

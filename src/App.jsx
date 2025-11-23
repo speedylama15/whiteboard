@@ -13,53 +13,16 @@ import useApp from "./store/useApp";
 import useTree from "./store/useTree";
 import useEdge from "./store/useEdge";
 
-import { getAllAlignments } from "./utils/getAllAlignments";
+import { getAxisAlignments } from "./utils/getAxisAlignments";
 import { getWhiteboardCoords } from "./utils/getMouseCoords";
 import { getHandleCoords } from "./utils/getHandleCoords";
 import { getAngle } from "./utils/getAngle";
 import { getClosestSide } from "./utils/getClosestSide";
 import { getPanValues } from "./utils/getPanValues";
-import { getRotatedVertices } from "./utils/rotating/getRotatedVertices";
+import { getRotatedVertices } from "./utils/getRotatedVertices";
+import { getSnapXY } from "./utils/getSnapXY";
 
 import "./App.css";
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function getSnapXY(node, side, mouseXY) {
-  const { x, y } = node.position;
-  const { width, height } = node.dimension;
-
-  const coords = {
-    top: { x: x + width / 2, y },
-    right: { x: x + width, y: y + height / 2 },
-    bottom: { x: x + width / 2, y: y + height },
-    left: { x, y: y + height / 2 },
-  };
-
-  const mouseAxis = side === "top" || side === "bottom" ? "x" : "y";
-  const otherAxis = mouseAxis === "x" ? "y" : "x";
-  const dimension = side === "top" || side === "bottom" ? "width" : "height";
-  const otherDimension =
-    side === "top" || side === "bottom" ? "height" : "width";
-
-  const centerCoord = coords[side][mouseAxis];
-  const mouseCoord = clamp(
-    mouseXY[mouseAxis],
-    node.position[mouseAxis],
-    node.position[mouseAxis] + node.dimension[dimension]
-  );
-
-  const gap = Math.abs(centerCoord - mouseCoord);
-  const addition =
-    side === "bottom" || side === "right" ? node.dimension[otherDimension] : 0;
-
-  return {
-    [mouseAxis]: gap <= 7 ? centerCoord : mouseCoord,
-    [otherAxis]: node.position[otherAxis] + addition,
-  };
-}
 
 const App = () => {
   // <------- new ------->
@@ -96,8 +59,8 @@ const App = () => {
 
   // <------- new ------->
 
-  const setVerticalLines = useApp((state) => state.setVerticalLines);
-  const setHorizontalLines = useApp((state) => state.setHorizontalLines);
+  const set_verticalLines = useApp((state) => state.set_verticalLines);
+  const set_horizontalLines = useApp((state) => state.set_horizontalLines);
 
   // panning
   const scale = useApp((state) => state.scale);
@@ -209,22 +172,21 @@ const App = () => {
         let gapX = 0;
         let gapY = 0;
 
-        const alignments = getAllAlignments(baseNode, nearbyNodes, 5);
+        const { horizontalLines, verticalLines } = getAxisAlignments(
+          baseNode,
+          nearbyNodes,
+          5
+        );
 
-        if (alignments.vertical.length) {
-          gapX = alignments.vertical[0].gap;
+        if (verticalLines.length) gapX = verticalLines[0].gap;
+        if (horizontalLines.length) gapY = horizontalLines[0].gap;
+        set_verticalLines(verticalLines);
+        set_horizontalLines(horizontalLines);
 
-          setVerticalLines(alignments.vertical);
-        } else {
-          setVerticalLines([]);
-        }
-
-        if (alignments.horizontal.length) {
-          gapY = alignments.horizontal[0].gap;
-          setHorizontalLines(alignments.horizontal);
-        } else {
-          setHorizontalLines([]);
-        }
+        // todo: I need to combine horizontalLines of axis based with distance based
+        // todo: I need to combine verticalLines of axis based with distance based
+        // todo: axis based takes priority
+        // todo: now how the priority works amongst them is something I have to think about later
 
         if (!frameIDRef.current && (panX !== 0 || panY !== 0)) {
           // review: recursive
@@ -307,8 +269,8 @@ const App = () => {
       panOffsetXY,
       scale,
       set_node,
-      setVerticalLines,
-      setHorizontalLines,
+      set_verticalLines,
+      set_horizontalLines,
       set_searchBoxesTree,
       set_edgeData,
       set_panOffsetXY,
@@ -358,15 +320,15 @@ const App = () => {
     panVelocityRef.current = { x: 0, y: 0 };
 
     set_mouseState(null);
-    setVerticalLines([]);
-    setHorizontalLines([]);
+    set_verticalLines([]);
+    set_horizontalLines([]);
   }, [
     nodesMap,
     mouseState,
     edgeData,
     set_mouseState,
-    setVerticalLines,
-    setHorizontalLines,
+    set_verticalLines,
+    set_horizontalLines,
     set_edge,
   ]);
 

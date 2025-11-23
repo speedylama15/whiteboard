@@ -37,8 +37,8 @@ const AlignmentLines = () => {
       ctx.strokeStyle = "red";
       ctx.lineWidth = 1 / scale;
       ctx.beginPath();
-      ctx.moveTo(lineStart[0], lineStart[1]);
-      ctx.lineTo(lineEnd[0], lineEnd[1]);
+      ctx.moveTo(lineStart.x, lineStart.y);
+      ctx.lineTo(lineEnd.x, lineEnd.y);
       ctx.stroke();
     });
 
@@ -46,8 +46,8 @@ const AlignmentLines = () => {
       ctx.strokeStyle = "red";
       ctx.lineWidth = 1 / scale;
       ctx.beginPath();
-      ctx.moveTo(lineStart[0], lineStart[1]);
-      ctx.lineTo(lineEnd[0], lineEnd[1]);
+      ctx.moveTo(lineStart.x, lineStart.y);
+      ctx.lineTo(lineEnd.x, lineEnd.y);
       ctx.stroke();
     });
 

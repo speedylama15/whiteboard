@@ -3,7 +3,7 @@ import RBush from "rbush";
 
 import useApp from "./useApp";
 
-import { getRotatedVertices } from "../utils/rotating/getRotatedVertices";
+import { getRotatedVertices } from "../utils/getRotatedVertices";
 
 const useTree = create((set, get) => {
   return {

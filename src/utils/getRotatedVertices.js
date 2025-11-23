@@ -17,11 +17,11 @@ export const getRotatedVertices = (node) => {
   const yCoords = [];
 
   const rotatedCorners = corners.map((corner) => {
-    const offsetX = corner.x - centerX;
-    const offsetY = corner.y - centerY;
+    const localX = corner.x - centerX;
+    const localY = corner.y - centerY;
 
-    const rotatedX = offsetX * Math.cos(angle) - offsetY * Math.sin(angle);
-    const rotatedY = offsetX * Math.sin(angle) + offsetY * Math.cos(angle);
+    const rotatedX = localX * Math.cos(angle) - localY * Math.sin(angle);
+    const rotatedY = localX * Math.sin(angle) + localY * Math.cos(angle);
 
     const x = Number((centerX + rotatedX).toFixed(2));
     const y = Number((centerY + rotatedY).toFixed(2));

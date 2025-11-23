@@ -141,10 +141,133 @@ const App = () => {
 
         // select a single node for diff + gap calc
         const node = Object.values(selectedNodesMap)[0];
-
         // supply box, create new tree, insert box, and set searchBoxesTree
         const { minX, maxX, minY, maxY, width, height } =
           getRotatedVertices(node);
+
+        // todo: distance based
+        // const HORIZONTAL_SEARCH_BOUNDARY = 1000;
+        // let gapX = 0;
+        // let gapY = 0;
+
+        // const horizontalSearchbox = {
+        //   minX: minX + diffX - HORIZONTAL_SEARCH_BOUNDARY,
+        //   maxX: maxX + diffX + HORIZONTAL_SEARCH_BOUNDARY,
+        //   minY: minY + diffY,
+        //   maxY: maxY + diffY,
+        //   node: node,
+        // };
+        // const horizontalNodes = [
+        //   ...nodesTree.search(horizontalSearchbox),
+        //   {
+        //     node: node,
+        //     minX: minX + diffX,
+        //     maxX: maxX + diffX,
+        //     minY: minY + diffY,
+        //     maxY: maxY + diffY,
+        //   },
+        // ].sort((a, b) => a.minX - b.minX);
+
+        // const adjDistancesArr = [];
+        // const distancesArr = [];
+        // let hasEncounteredMovingNode = false;
+
+        // for (let i = 0; i < horizontalNodes.length - 1; i++) {
+        //   const leftNode = horizontalNodes[i];
+        //   const rightNode = horizontalNodes[i + 1];
+
+        //   if (!hasEncounteredMovingNode)
+        //     hasEncounteredMovingNode = leftNode.node.id === node.id;
+        //   const side = hasEncounteredMovingNode === false ? "left" : "right";
+
+        //   const distance = rightNode.minX - leftNode.maxX;
+        //   const isAdjacent =
+        //     leftNode.node.id === node.id || rightNode.node.id === node.id;
+
+        //   const data = {
+        //     isAdjacent,
+        //     distance,
+        //     side,
+        //     leftNode,
+        //     rightNode,
+        //   };
+
+        //   if (isAdjacent) adjDistancesArr.push(data);
+        //   if (!isAdjacent) distancesArr.push(data);
+        // }
+
+        // // review: 2 adjacents
+        // if (adjDistancesArr.length === 2) {
+        //   const leftDistance = adjDistancesArr[0];
+        //   const rightDistance = adjDistancesArr[1];
+
+        //   const gap = rightDistance.distance - leftDistance.distance;
+        //   const absGap = Math.abs(gap);
+
+        //   if (absGap <= 7) gapX = gap / 2;
+        // }
+
+        // // review: non-adjacents
+        // const threshold = 7;
+        // let horizontalMap = {};
+        // let shortestDistanceX = threshold;
+
+        // if (gapX === 0) {
+        //   adjDistancesArr.forEach((adjDist) => {
+        //     distancesArr.forEach((dist) => {
+        //       let gap = 0;
+        //       let absGap = 0;
+
+        //       if (adjDist.side === "left") {
+        //         gap = dist.distance - adjDist.distance;
+        //         absGap = Math.abs(gap);
+        //       }
+
+        //       if (adjDist.side === "right") {
+        //         gap = adjDist.distance - dist.distance;
+        //         absGap = Math.abs(gap);
+        //       }
+
+        //       if (absGap <= threshold) {
+        //         if (absGap < shortestDistanceX) {
+        //           shortestDistanceX = absGap;
+        //           horizontalMap = {};
+        //         }
+
+        //         if (absGap === shortestDistanceX) {
+        //           const data = {
+        //             type: "distance",
+        //             adjDist,
+        //             dist,
+        //           };
+
+        //           if (horizontalMap[gap]) {
+        //             horizontalMap[gap].push(data);
+        //           } else {
+        //             horizontalMap[gap] = [data];
+        //           }
+        //         }
+        //       }
+        //     });
+        //   });
+        // }
+
+        // const keys = Object.keys(horizontalMap);
+
+        // if (keys.length === 1) {
+        //   gapX = parseInt(keys[0]);
+
+        //   console.log("snapping 🧲", {
+        //     gapX,
+        //     horizontalLines: horizontalMap[gapX],
+        //   });
+        // } else {
+        //   console.log("no snapping", { length: keys.length });
+        //   gapX = 0;
+        // }
+        // todo: distance based
+
+        // idea: axis based
         const searchBox = {
           minX: minX + diffX - SEARCH_BOUNDARY,
           minY: minY + diffY - SEARCH_BOUNDARY,
@@ -152,7 +275,6 @@ const App = () => {
           maxY: maxY + diffY + SEARCH_BOUNDARY,
           node: node,
         };
-        set_searchBoxesTree(searchBox);
 
         // actual search for nearby nodes
         const nearbyNodes = nodesTree
@@ -182,11 +304,7 @@ const App = () => {
         if (horizontalLines.length) gapY = horizontalLines[0].gap;
         set_verticalLines(verticalLines);
         set_horizontalLines(horizontalLines);
-
-        // todo: I need to combine horizontalLines of axis based with distance based
-        // todo: I need to combine verticalLines of axis based with distance based
-        // todo: axis based takes priority
-        // todo: now how the priority works amongst them is something I have to think about later
+        // idea: axis based
 
         if (!frameIDRef.current && (panX !== 0 || panY !== 0)) {
           // review: recursive

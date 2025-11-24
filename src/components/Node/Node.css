@@ -31,3 +31,7 @@
 .node[data-is-selected="true"] > .rotatable-node {
   box-shadow: #fff 0px 0px 0px 3px;
 }
+
+.node[data-is-group-selected="true"] > .rotatable-node {
+  box-shadow: #31ff12 0px 0px 0px 3px;
+}

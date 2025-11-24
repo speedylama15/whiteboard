@@ -6,6 +6,7 @@ import NodeRotator from "./NodeRotator/NodeRotator";
 
 import useApp from "../../store/useApp";
 import useTree from "../../store/useTree";
+import useGrouping from "../../store/useGrouping";
 
 import "./Node.css";
 
@@ -13,6 +14,9 @@ const Node = memo(({ nodeID }) => {
   const node = useApp((state) => state.nodesMap[nodeID]);
   const isSelected = useApp((state) =>
     state.selectedNodesMap[nodeID] ? true : false
+  );
+  const isGroupSelected = useGrouping((state) =>
+    state.groupSelectedNodesMap[nodeID] ? true : false
   );
 
   const mouseState = useApp((state) => state.mouseState);
@@ -38,6 +42,7 @@ const Node = memo(({ nodeID }) => {
       data-node-id={node.id}
       className="node basic-node"
       data-is-selected={isSelected}
+      data-is-group-selected={isGroupSelected}
       style={{
         width: node.dimension.width,
         height: node.dimension.height,

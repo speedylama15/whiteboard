@@ -9,9 +9,13 @@ import AlignmentLines from "./components/AlignmentLines/AlignmentLines";
 import NodesTree from "./components/Tree/NodesTree/NodesTree";
 import SearchBoxesTree from "./components/Tree/SearchBoxesTree/SearchBoxesTree";
 
+import FlexibleGroupBox from "./components/FlexibleGroupBox/FlexibleGroupBox";
+import StrictGroupBox from "./components/StrictGroupBox/StrictGroupBox";
+
 import useApp from "./store/useApp";
 import useTree from "./store/useTree";
 import useEdge from "./store/useEdge";
+import useGrouping from "./store/useGrouping";
 
 import { getAxisAlignments } from "./utils/getAxisAlignments";
 import { getWhiteboardCoords } from "./utils/getMouseCoords";
@@ -31,6 +35,7 @@ const App = () => {
 
   // nodes tree
   const nodesTree = useTree((state) => state.nodesTree);
+  const set_nodesTree = useTree((state) => state.set_nodesTree);
   const reset_nodesTree = useTree((state) => state.reset_nodesTree);
 
   // search boxes tree
@@ -57,8 +62,6 @@ const App = () => {
   const edgeData = useEdge((state) => state.edgeData);
   const set_edgeData = useEdge((state) => state.set_edgeData);
 
-  // <------- new ------->
-
   const set_verticalLines = useApp((state) => state.set_verticalLines);
   const set_horizontalLines = useApp((state) => state.set_horizontalLines);
 
@@ -67,6 +70,29 @@ const App = () => {
   const set_scale = useApp((state) => state.set_scale);
   const panOffsetXY = useApp((state) => state.panOffsetXY);
   const set_panOffsetXY = useApp((state) => state.set_panOffsetXY);
+
+  // grouping
+  const set_flexibleGroupBoxData = useGrouping(
+    (state) => state.set_flexibleGroupBoxData
+  );
+  const reset_flexibleGroupBoxData = useGrouping(
+    (state) => state.reset_flexibleGroupBoxData
+  );
+  const set_strictGroupBoxData = useGrouping(
+    (state) => state.set_strictGroupBoxData
+  );
+  const reset_strictGroupBoxData = useGrouping(
+    (state) => state.reset_strictGroupBoxData
+  );
+  const groupSelectedNodesMap = useGrouping(
+    (state) => state.groupSelectedNodesMap
+  );
+  const set_groupSelectedNodesMap = useGrouping(
+    (state) => state.set_groupSelectedNodesMap
+  );
+  const reset_groupSelectedNodesMap = useGrouping(
+    (state) => state.reset_groupSelectedNodesMap
+  );
 
   // <------- ref ------->
   const whiteboardWrapperRef = useRef();
@@ -79,19 +105,102 @@ const App = () => {
   // review: because scale may differ when mousedown and mousemove were invoked
   const startXYRef = useRef(null);
   const wrapperRectRef = useRef(null);
+
+  const xArrRef = useRef([]);
+  const yArrRef = useRef([]);
   // <------- ref ------->
 
-  const handleMouseDown = useCallback(() => {
-    // this gets triggered, when non-node, edge element is clicked
-    reset_nodesTree();
-    reset_searchBoxesTree();
-    reset_selectedNodesMap();
-  }, [reset_nodesTree, reset_searchBoxesTree, reset_selectedNodesMap]);
+  const handleMouseDown = useCallback(
+    (e) => {
+      set_mouseState("SELECTION_GROUP");
+      set_nodesTree([]);
+      reset_strictGroupBoxData();
+      startXYRef.current = getWhiteboardCoords(
+        e,
+        panOffsetXY,
+        scale,
+        wrapperRect
+      );
+
+      reset_searchBoxesTree();
+      reset_selectedNodesMap();
+      reset_groupSelectedNodesMap();
+    },
+    [
+      panOffsetXY,
+      scale,
+      wrapperRect,
+      set_mouseState,
+      reset_searchBoxesTree,
+      reset_selectedNodesMap,
+      set_nodesTree,
+      reset_strictGroupBoxData,
+      reset_groupSelectedNodesMap,
+    ]
+  );
 
   const handleMouseMove = useCallback(
     (e) => {
       const wrapper = whiteboardWrapperRef.current;
       if (!wrapper) return;
+
+      if (mouseState === "NODES_MOVE") {
+        const { x, y } = getWhiteboardCoords(
+          e,
+          panOffsetXY,
+          scale,
+          wrapperRect
+        );
+      }
+
+      if (mouseState === "SELECTION_GROUP") {
+        const mouseXY = getWhiteboardCoords(e, panOffsetXY, scale, wrapperRect);
+
+        const startX = startXYRef.current.x;
+        const startY = startXYRef.current.y;
+        const currX = mouseXY.x;
+        const currY = mouseXY.y;
+
+        const minX = Math.min(startX, currX);
+        const maxX = Math.max(startX, currX);
+        const minY = Math.min(startY, currY);
+        const maxY = Math.max(startY, currY);
+
+        const box = {
+          minX,
+          maxX,
+          minY,
+          maxY,
+        };
+
+        const width = Math.abs(maxX - minX);
+        const height = Math.abs(maxY - minY);
+        const translate = `translate(${minX}px, ${minY}px)`;
+
+        const map = {};
+        const xArr = [];
+        const yArr = [];
+        const selectedNodes = nodesTree.search(box);
+        selectedNodes.forEach((item) => {
+          const { node, minX, maxX, minY, maxY } = item;
+
+          xArr.push(minX);
+          xArr.push(maxX);
+
+          yArr.push(minY);
+          yArr.push(maxY);
+
+          map[node.id] = node;
+        });
+        set_groupSelectedNodesMap(map);
+
+        xArrRef.current = xArr;
+        yArrRef.current = yArr;
+
+        set_flexibleGroupBoxData({ display: "flex", width, height, translate });
+
+        return;
+      }
 
       if (mouseState === "node_rotate") {
         document.body.style.userSelect = "none";
@@ -380,6 +489,7 @@ const App = () => {
     },
     [
       mouseState,
+      set_flexibleGroupBoxData,
       nodesMap,
       nodesTree,
       selectedNodesMap,
@@ -392,6 +502,7 @@ const App = () => {
       set_searchBoxesTree,
       set_edgeData,
       set_panOffsetXY,
+      set_groupSelectedNodesMap,
     ]
   );
 
@@ -402,6 +513,27 @@ const App = () => {
       cancelAnimationFrame(frameIDRef.current);
 
       frameIDRef.current = null;
+    }
+
+    if (mouseState === "SELECTION_GROUP") {
+      const keys = Object.keys(groupSelectedNodesMap);
+
+      if (keys.length > 0) {
+        const boxMinX = Math.min(...xArrRef.current);
+        const boxMaxX = Math.max(...xArrRef.current);
+        const boxMinY = Math.min(...yArrRef.current);
+        const boxMaxY = Math.max(...yArrRef.current);
+
+        const width = Math.abs(boxMaxX - boxMinX);
+        const height = Math.abs(boxMaxY - boxMinY);
+        const translate = `translate(${boxMinX}px, ${boxMinY}px)`;
+
+        console.log("data", { display: "flex", width, height, translate });
+
+        set_strictGroupBoxData({ display: "flex", width, height, translate });
+      }
+
+      reset_flexibleGroupBoxData();
     }
 
     if (mouseState === "edge_create") {
@@ -440,7 +572,9 @@ const App = () => {
     set_mouseState(null);
     set_verticalLines([]);
     set_horizontalLines([]);
+    reset_nodesTree();
   }, [
+    groupSelectedNodesMap,
     nodesMap,
     mouseState,
     edgeData,
@@ -448,6 +582,9 @@ const App = () => {
     set_verticalLines,
     set_horizontalLines,
     set_edge,
+    reset_nodesTree,
+    set_strictGroupBoxData,
+    reset_flexibleGroupBoxData,
   ]);
 
   const handleWheel = useCallback(
@@ -543,6 +680,9 @@ const App = () => {
             transformOrigin: "0 0",
           }}
         >
+          <FlexibleGroupBox />
+          <StrictGroupBox />
+
           <div className="whiteboard-nodes">
             {Object.keys(nodesMap).map((nodeID) => {
               return <Node key={nodeID} nodeID={nodeID} />;
@@ -550,41 +690,12 @@ const App = () => {
           </div>
 
           <div className="whiteboard-edges">
-            {/* fix */}
-            <svg className="react-flow__marker" aria-hidden="true">
-              <defs>
-                <marker
-                  className="react-flow__arrowhead"
-                  id="1__type=arrow"
-                  markerWidth="12.5"
-                  markerHeight="12.5"
-                  viewBox="-10 -10 20 20"
-                  markerUnits="strokeWidth"
-                  orient="auto-start-reverse"
-                  refX="0"
-                  refY="0"
-                >
-                  <polyline
-                    className="arrow"
-                    strokeLinecap="round"
-                    fill="none"
-                    strokeLinejoin="round"
-                    points="-5,-4 0,0 -5,4"
-                    style={{ strokeWidth: 2, stroke: "#000000ff" }}
-                  ></polyline>
-                </marker>
-              </defs>
-            </svg>
-            {/* fix */}
-
             {Object.keys(edgesMap).map((edgeID) => {
               return <Edge key={edgeID} edgeID={edgeID} />;
             })}
           </div>
 
           {mouseState === "edge_create" && <NewEdge />}
-
-          {/* review */}
         </div>
 
         {wrapperRect && (

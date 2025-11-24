@@ -26,8 +26,9 @@ const useApp = create((set) => ({
 
   // panning
   scale: 1,
-  set_scale: (value) =>
-    set((state) => ({ ...state, scale: parseFloat(value.toFixed(2)) })),
+  set_scale: (value) => set((state) => ({ ...state, scale: value })),
+  // set_scale: (value) =>
+  //   set((state) => ({ ...state, scale: parseFloat(value.toFixed(2)) })),
   panOffsetXY: { x: 0, y: 0 },
   // idea: huh?
   set_panOffsetXY: (panOffsetXY) =>

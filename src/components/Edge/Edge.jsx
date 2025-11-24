@@ -91,7 +91,7 @@ const Edge = memo(({ edgeID }) => {
           stroke="#000000ff"
           fill="none"
           strokeWidth={2}
-          markerEnd="url(#1__type=arrow)"
+          // markerEnd="url(#1__type=arrow)"
         />
       </svg>
     </div>

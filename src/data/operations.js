@@ -1,0 +1,4 @@
+export const GROUP_SELECTION = "GROUP_SELECTION";
+export const GROUP_MOVE = "GROUP_MOVE";
+export const GROUP_RESIZE = "GROUP_RESIZE";
+export const GROUP_ROTATE = "GROUP_ROTATE";

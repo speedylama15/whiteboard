@@ -9,13 +9,14 @@ import AlignmentLines from "./components/AlignmentLines/AlignmentLines";
 import NodesTree from "./components/Tree/NodesTree/NodesTree";
 import SearchBoxesTree from "./components/Tree/SearchBoxesTree/SearchBoxesTree";
 
-import FlexibleGroupBox from "./components/FlexibleGroupBox/FlexibleGroupBox";
-import StrictGroupBox from "./components/StrictGroupBox/StrictGroupBox";
+import GroupBox from "./components/GroupBox/GroupBox";
 
 import useApp from "./store/useApp";
 import useTree from "./store/useTree";
 import useEdge from "./store/useEdge";
-import useGrouping from "./store/useGrouping";
+import useGroupBox from "./store/useGroupBox";
+import useSelection from "./store/useSelection";
+import useResize from "./store/useResize";
 
 import { getAxisAlignments } from "./utils/getAxisAlignments";
 import { getWhiteboardCoords } from "./utils/getMouseCoords";
@@ -71,28 +72,16 @@ const App = () => {
   const panOffsetXY = useApp((state) => state.panOffsetXY);
   const set_panOffsetXY = useApp((state) => state.set_panOffsetXY);
 
-  // grouping
-  const set_flexibleGroupBoxData = useGrouping(
-    (state) => state.set_flexibleGroupBoxData
-  );
-  const reset_flexibleGroupBoxData = useGrouping(
-    (state) => state.reset_flexibleGroupBoxData
-  );
-  const set_strictGroupBoxData = useGrouping(
-    (state) => state.set_strictGroupBoxData
-  );
-  const reset_strictGroupBoxData = useGrouping(
-    (state) => state.reset_strictGroupBoxData
-  );
-  const groupSelectedNodesMap = useGrouping(
-    (state) => state.groupSelectedNodesMap
-  );
-  const set_groupSelectedNodesMap = useGrouping(
-    (state) => state.set_groupSelectedNodesMap
-  );
-  const reset_groupSelectedNodesMap = useGrouping(
-    (state) => state.reset_groupSelectedNodesMap
-  );
+  const { set_display, set_dimension, set_position, reset_groupBox } =
+    useGroupBox();
+
+  const {
+    groupSelectedNodesMap,
+    set_groupSelectedNodesMap,
+    reset_groupSelectedNodesMap,
+  } = useSelection();
+
+  const { startResizeXY, resizeDirection } = useResize();
 
   // <------- ref ------->
   const whiteboardWrapperRef = useRef();
@@ -105,26 +94,24 @@ const App = () => {
   // review: because scale may differ when mousedown and mousemove were invoked
   const startXYRef = useRef(null);
   const wrapperRectRef = useRef(null);
-
-  const xArrRef = useRef([]);
-  const yArrRef = useRef([]);
   // <------- ref ------->
 
   const handleMouseDown = useCallback(
     (e) => {
-      set_mouseState("SELECTION_GROUP");
-      set_nodesTree([]);
-      reset_strictGroupBoxData();
-      startXYRef.current = getWhiteboardCoords(
-        e,
-        panOffsetXY,
-        scale,
-        wrapperRect
-      );
+      // GROUP_SELECTION
+      const mouseXY = getWhiteboardCoords(e, panOffsetXY, scale, wrapperRect);
 
+      reset_groupBox();
+      set_mouseState("GROUP_SELECTION");
+      set_display(true);
+      set_position(mouseXY);
+      set_nodesTree([]);
+      startXYRef.current = mouseXY;
+      // GROUP_SELECTION
+
+      reset_groupSelectedNodesMap();
       reset_searchBoxesTree();
       reset_selectedNodesMap();
-      reset_groupSelectedNodesMap();
     },
     [
       panOffsetXY,
@@ -134,8 +121,10 @@ const App = () => {
       reset_searchBoxesTree,
       reset_selectedNodesMap,
       set_nodesTree,
-      reset_strictGroupBoxData,
+      set_display,
+      set_position,
       reset_groupSelectedNodesMap,
+      reset_groupBox,
     ]
   );
 
@@ -144,16 +133,115 @@ const App = () => {
       const wrapper = whiteboardWrapperRef.current;
       if (!wrapper) return;
 
-      if (mouseState === "NODES_MOVE") {
+      // todo
+      if (mouseState === "NODE_RESIZE") {
+        // document.body.style.cursor = "ns-resize";
+
+        const currMouseXY = getWhiteboardCoords(
+          e,
+          panOffsetXY,
+          scale,
+          wrapperRect
+        );
+
+        if (resizeDirection === "top") {
+          const node = Object.values(selectedNodesMap)[0];
+          const diffY = currMouseXY.y - startResizeXY.y;
+          const height = node.dimension.height - diffY;
+
+          if (height < 0) {
+            console.log({ diffY, height });
+
+            set_node(node.id, {
+              ...nodesMap[node.id],
+              position: {
+                x: node.position.x,
+                y: node.position.y + node.dimension.height,
+              },
+              dimension: {
+                width: node.dimension.width,
+                height: Math.abs(height),
+              },
+            });
+          } else {
+            set_node(node.id, {
+              ...nodesMap[node.id],
+              position: {
+                x: node.position.x,
+                y: node.position.y + diffY,
+              },
+              dimension: {
+                width: node.dimension.width,
+                height: node.dimension.height - diffY,
+              },
+            });
+          }
+        }
+
+        return;
+      }
+      // todo
+
+      // debug: seeing A LOT of patterns
+      if (mouseState === "GROUP_MOVE") {
         const { x, y } = getWhiteboardCoords(
           e,
           panOffsetXY,
           scale,
           wrapperRect
         );
-      }
 
-      if (mouseState === "SELECTION_GROUP") {
+        if (startXYRef.current === null) {
+          startXYRef.current = { x, y };
+        }
+
+        if (wrapperRectRef.current === null) {
+          wrapperRectRef.current =
+            whiteboardWrapperRef.current.getBoundingClientRect();
+        }
+
+        // for panning
+        const { panX, panY } = getPanValues(e, wrapperRectRef.current);
+        panVelocityRef.current = { x: panX, y: panY };
+
+        const diffX = Math.floor(x - startXYRef.current.x) * 1;
+        const diffY = Math.floor(y - startXYRef.current.y) * 1;
+
+        if (!frameIDRef.current && (panX !== 0 || panY !== 0)) {
+          const animate = () => {
+            const { x, y } = panVelocityRef.current;
+
+            if (x === 0 && y === 0) {
+              frameIDRef.current = null;
+              return;
+            }
+
+            set_panOffsetXY((prev) => ({
+              x: prev.x + x,
+              y: prev.y + y,
+            }));
+
+            frameIDRef.current = requestAnimationFrame(animate);
+          };
+
+          animate();
+        }
+
+        // Object.keys(selectedNodesMap).forEach((nodeID) => {
+        //   set_node(nodeID, {
+        //     ...nodesMap[nodeID],
+        //     position: {
+        //       x: node.position.x + diffX + gapX,
+        //       y: node.position.y + diffY + gapY,
+        //     },
+        //   });
+        // });
+
+        return;
+      }
+      // debug
+
+      if (mouseState === "GROUP_SELECTION") {
         const mouseXY = getWhiteboardCoords(e, panOffsetXY, scale, wrapperRect);
 
         const startX = startXYRef.current.x;
@@ -166,6 +254,9 @@ const App = () => {
         const minY = Math.min(startY, currY);
         const maxY = Math.max(startY, currY);
 
+        const width = Math.abs(maxX - minX);
+        const height = Math.abs(maxY - minY);
+
         const box = {
           minX,
           maxX,
@@ -173,31 +264,18 @@ const App = () => {
           maxY,
         };
 
-        const width = Math.abs(maxX - minX);
-        const height = Math.abs(maxY - minY);
-        const translate = `translate(${minX}px, ${minY}px)`;
+        set_dimension({ width, height });
+        set_position({ x: minX, y: minY });
+
+        const selectedBoxes = nodesTree.search(box);
 
         const map = {};
-        const xArr = [];
-        const yArr = [];
-        const selectedNodes = nodesTree.search(box);
-        selectedNodes.forEach((item) => {
-          const { node, minX, maxX, minY, maxY } = item;
 
-          xArr.push(minX);
-          xArr.push(maxX);
-
-          yArr.push(minY);
-          yArr.push(maxY);
-
-          map[node.id] = node;
+        selectedBoxes.forEach((box) => {
+          map[box.node.id] = box;
         });
+
         set_groupSelectedNodesMap(map);
-
-        xArrRef.current = xArr;
-        yArrRef.current = yArr;
-
-        set_flexibleGroupBoxData({ display: "flex", width, height, translate });
 
         return;
       }
@@ -489,7 +567,6 @@ const App = () => {
     },
     [
       mouseState,
-      set_flexibleGroupBoxData,
       nodesMap,
       nodesTree,
       selectedNodesMap,
@@ -502,7 +579,11 @@ const App = () => {
       set_searchBoxesTree,
       set_edgeData,
       set_panOffsetXY,
+      set_dimension,
+      set_position,
       set_groupSelectedNodesMap,
+      resizeDirection,
+      startResizeXY,
     ]
   );
 
@@ -515,25 +596,37 @@ const App = () => {
       frameIDRef.current = null;
     }
 
-    if (mouseState === "SELECTION_GROUP") {
-      const keys = Object.keys(groupSelectedNodesMap);
+    if (mouseState === "GROUP_SELECTION") {
+      const nodeIDs = Object.keys(groupSelectedNodesMap);
 
-      if (keys.length > 0) {
-        const boxMinX = Math.min(...xArrRef.current);
-        const boxMaxX = Math.max(...xArrRef.current);
-        const boxMinY = Math.min(...yArrRef.current);
-        const boxMaxY = Math.max(...yArrRef.current);
+      // if nothing has been selected, then there is no need for GroupBox
+      if (nodeIDs.length > 0) {
+        let xArr = [];
+        let yArr = [];
 
-        const width = Math.abs(boxMaxX - boxMinX);
-        const height = Math.abs(boxMaxY - boxMinY);
-        const translate = `translate(${boxMinX}px, ${boxMinY}px)`;
+        nodeIDs.forEach((id) => {
+          const { minX, maxX, minY, maxY } = groupSelectedNodesMap[id];
 
-        console.log("data", { display: "flex", width, height, translate });
+          xArr.push(minX);
+          xArr.push(maxX);
+          yArr.push(minY);
+          yArr.push(maxY);
+        });
 
-        set_strictGroupBoxData({ display: "flex", width, height, translate });
+        const minX = Math.min(...xArr);
+        const maxX = Math.max(...xArr);
+        const minY = Math.min(...yArr);
+        const maxY = Math.max(...yArr);
+
+        const width = Math.abs(maxX - minX);
+        const height = Math.abs(maxY - minY);
+
+        // set essential values
+        set_dimension({ width, height });
+        set_position({ x: minX, y: minY });
+      } else {
+        set_display(false);
       }
-
-      reset_flexibleGroupBoxData();
     }
 
     if (mouseState === "edge_create") {
@@ -569,12 +662,13 @@ const App = () => {
     wrapperRectRef.current = null;
     panVelocityRef.current = { x: 0, y: 0 };
 
+    document.body.style.userSelect = "auto";
+
     set_mouseState(null);
     set_verticalLines([]);
     set_horizontalLines([]);
     reset_nodesTree();
   }, [
-    groupSelectedNodesMap,
     nodesMap,
     mouseState,
     edgeData,
@@ -583,8 +677,10 @@ const App = () => {
     set_horizontalLines,
     set_edge,
     reset_nodesTree,
-    set_strictGroupBoxData,
-    reset_flexibleGroupBoxData,
+    set_display,
+    groupSelectedNodesMap,
+    set_dimension,
+    set_position,
   ]);
 
   const handleWheel = useCallback(
@@ -680,8 +776,7 @@ const App = () => {
             transformOrigin: "0 0",
           }}
         >
-          <FlexibleGroupBox />
-          <StrictGroupBox />
+          <GroupBox />
 
           <div className="whiteboard-nodes">
             {Object.keys(nodesMap).map((nodeID) => {

@@ -6,16 +6,17 @@ import NodeRotator from "./NodeRotator/NodeRotator";
 
 import useApp from "../../store/useApp";
 import useTree from "../../store/useTree";
-import useGrouping from "../../store/useGrouping";
+import useSelection from "../../store/useSelection";
 
 import "./Node.css";
+import NodeResizer from "./NodeResizer/NodeResizer";
 
 const Node = memo(({ nodeID }) => {
   const node = useApp((state) => state.nodesMap[nodeID]);
   const isSelected = useApp((state) =>
     state.selectedNodesMap[nodeID] ? true : false
   );
-  const isGroupSelected = useGrouping((state) =>
+  const isGroupSelected = useSelection((state) =>
     state.groupSelectedNodesMap[nodeID] ? true : false
   );
 
@@ -63,7 +64,16 @@ const Node = memo(({ nodeID }) => {
         >
           {node.content.text}
         </div>
+      </div>
 
+      <textarea />
+
+      <div
+        className="node-controls"
+        style={{
+          transform: `rotate(${node.rotation}rad)`,
+        }}
+      >
         {mouseState === "edge_create" && (
           <>
             <NodeConnector node={node} connectorLocation="top" />
@@ -77,6 +87,16 @@ const Node = memo(({ nodeID }) => {
           <>
             <NodeRotator node={node} />
 
+            <NodeResizer node={node} type="single" location={"top"} />
+            <NodeResizer node={node} type="single" location={"right"} />
+            <NodeResizer node={node} type="single" location={"bottom"} />
+            <NodeResizer node={node} type="single" location={"left"} />
+
+            <NodeResizer node={node} type="multi" location={"top-left"} />
+            <NodeResizer node={node} type="multi" location={"top-right"} />
+            <NodeResizer node={node} type="multi" location={"bottom-left"} />
+            <NodeResizer node={node} type="multi" location={"bottom-right"} />
+
             <NodeHandle node={node} handleLocation={"top"} />
             <NodeHandle node={node} handleLocation={"right"} />
             <NodeHandle node={node} handleLocation={"bottom"} />
@@ -89,3 +109,110 @@ const Node = memo(({ nodeID }) => {
 });
 
 export default Node;
+
+// import { memo } from "react";
+
+// import NodeHandle from "./NodeHandle/NodeHandle";
+// import NodeConnector from "./NodeConnector/NodeConnector";
+// import NodeRotator from "./NodeRotator/NodeRotator";
+
+// import useApp from "../../store/useApp";
+// import useTree from "../../store/useTree";
+// import useSelection from "../../store/useSelection";
+
+// import "./Node.css";
+// import NodeResizer from "./NodeResizer/NodeResizer";
+
+// const Node = memo(({ nodeID }) => {
+//   const node = useApp((state) => state.nodesMap[nodeID]);
+//   const isSelected = useApp((state) =>
+//     state.selectedNodesMap[nodeID] ? true : false
+//   );
+//   const isGroupSelected = useSelection((state) =>
+//     state.groupSelectedNodesMap[nodeID] ? true : false
+//   );
+
+//   const mouseState = useApp((state) => state.mouseState);
+
+//   const set_nodesTree = useTree((state) => state.set_nodesTree);
+//   const set_selectedNodesMap = useApp((state) => state.set_selectedNodesMap);
+//   const set_mouseState = useApp((state) => state.set_mouseState);
+
+//   const handleMouseDown = (e) => {
+//     e.stopPropagation();
+
+//     set_nodesTree([nodeID]);
+//     // review: when I rotate the node, the node inside of nodesMap gets updated
+//     // review: but the selected node inside of selectedNodesMap remains the same
+//     // review: therefore, when the rotator gets clicked again, I need to ensure
+//     // review: that the updated version of the node gets selected again
+//     set_selectedNodesMap({ [nodeID]: node });
+//     set_mouseState("node_move");
+//   };
+
+//   return (
+//     <div
+//       data-node-id={node.id}
+//       className="node basic-node"
+//       data-is-selected={isSelected}
+//       data-is-group-selected={isGroupSelected}
+//       style={{
+//         width: node.dimension.width,
+//         height: node.dimension.height,
+//         transform: `translate(${node.position.x}px, ${node.position.y}px)`,
+//       }}
+//       onMouseDown={handleMouseDown}
+//     >
+//       <div
+//         className="rotatable-node"
+//         style={{
+//           transform: `rotate(${node.rotation}rad)`,
+//         }}
+//       >
+//         <div className="node-contents">
+//           <div
+//             className="node_text"
+//             contentEditable={true}
+//             suppressContentEditableWarning={true}
+//           >
+//             {node.content.text}
+//           </div>
+//         </div>
+
+//         <div className="node-controls">
+//           {mouseState === "edge_create" && (
+//             <>
+//               <NodeConnector node={node} connectorLocation="top" />
+//               <NodeConnector node={node} connectorLocation="right" />
+//               <NodeConnector node={node} connectorLocation="bottom" />
+//               <NodeConnector node={node} connectorLocation="left" />
+//             </>
+//           )}
+
+//           {isSelected && (
+//             <>
+//               <NodeRotator node={node} />
+
+//               <NodeResizer node={node} type="single" location={"top"} />
+//               <NodeResizer node={node} type="single" location={"right"} />
+//               <NodeResizer node={node} type="single" location={"bottom"} />
+//               <NodeResizer node={node} type="single" location={"left"} />
+
+//               <NodeResizer node={node} type="multi" location={"top-left"} />
+//               <NodeResizer node={node} type="multi" location={"top-right"} />
+//               <NodeResizer node={node} type="multi" location={"bottom-left"} />
+//               <NodeResizer node={node} type="multi" location={"bottom-right"} />
+
+//               <NodeHandle node={node} handleLocation={"top"} />
+//               <NodeHandle node={node} handleLocation={"right"} />
+//               <NodeHandle node={node} handleLocation={"bottom"} />
+//               <NodeHandle node={node} handleLocation={"left"} />
+//             </>
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// });
+
+// export default Node;
